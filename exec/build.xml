@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+
+<!--
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+
+<!-- hive-exec.jar is a fat jar that simplifies deployment. -->
+<project xmlns:ivy="antlib:org.apache.ivy.ant" name="exec" default="jar">
+
+  <import file="../build-common.xml"/>
+
+  <!-- Nothing to compile. -->
+  <target name="compile" depends="init, setup, ivy-retrieve">
+    <echo message="Project: ${ant.project.name}"/>
+  </target>
+
+  <target name="jar" depends="compile">
+    <echo message="Project: ${ant.project.name}"/>
+    <unzip src="${build.ivy.lib.dir}/default/libthrift-${libthrift.version}.jar"
+           dest="${build.dir.hive}/thrift/classes">
+      <patternset>
+        <exclude name="META-INF"/>
+        <exclude name="META-INF/MANIFEST.MF"/>
+      </patternset>
+    </unzip>
+    <unzip src="${build.ivy.lib.dir}/default/commons-lang-${commons-lang.version}.jar"
+           dest="${build.dir.hive}/commons-lang/classes">
+      <patternset>
+          <exclude name="META-INF"/>
+          <exclude name="META-INF/MANIFEST.MF"/>
+      </patternset>
+    </unzip>
+    <unzip src="${build.ivy.lib.dir}/default/json-${json.version}.jar"
+           dest="${build.dir.hive}/json/classes">
+      <patternset>
+          <exclude name="META-INF"/>
+          <exclude name="META-INF/MANIFEST.MF"/>
+      </patternset>
+    </unzip>
+    <unzip src="${build.ivy.lib.dir}/default/JavaEWAH-${javaewah.version}.jar"
+           dest="${build.dir.hive}/javaewah/classes">
+      <patternset>
+        <exclude name="meta-inf"/>
+        <exclude name="meta-inf/manifest.mf"/>
+      </patternset>
+    </unzip>
+    <jar jarfile="${build.dir}/hive-exec-${version}.jar">
+      <fileset dir="${build.dir.hive}/common/classes" includes="**/*.class"/>
+      <fileset dir="${build.dir.hive}/ql/classes" includes="**/*.class,**/*.properties"/>
+      <fileset dir="${build.dir.hive}/serde/classes" includes="**/*.class"/>
+      <fileset dir="${build.dir.hive}/thrift/classes" includes="**/*.class"/>
+      <fileset dir="${build.dir.hive}/commons-lang/classes" includes="**/StringUtils.class,**/WordUtils.class"/>
+      <fileset dir="${build.dir.hive}/json/classes" includes="**/*.class"/>
+      <fileset dir="${build.dir.hive}/shims/classes" includes="**/*.class"/>
+      <fileset dir="${build.dir.hive}/javaewah/classes" includes="**/*.class"/>
+      <manifest>
+        <!-- Not putting these in their own manifest section, since that inserts
+             a new-line, which breaks the reading of the attributes. -->
+        <attribute name="Implementation-Title" value="Hive"/>
+        <attribute name="Implementation-Version" value="${version}"/>
+        <attribute name="Implementation-Vendor" value="Apache"/>
+      </manifest>
+      <metainf dir="${hive.root}" includes="LICENSE,NOTICE"/>
+    </jar>
+    <ivy:publish settingsRef="${ant.project.name}.ivy.settings"
+                 resolver="local" pubrevision="${version}" overwrite="true"
+                 artifactspattern="${build.dir}/${ivy.publish.pattern}"/>
+  </target>
+
+</project>
