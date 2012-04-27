@@ -57,6 +57,10 @@
   <property name="checkstyle.build.dir" location="${build.dir.hive}/checkstyle"/>
   <property name="rat.build.dir" location="${build.dir.hive}/rat"/>
   <property name="md5sum.format" value="{0}  {1}"/>
+  <property name="maven.artifact.projects"
+    value="anttasks,cli,common,contrib,hbase-handler,hwi,jdbc,metastore,exec,pdk,builtins,serde,service,shims"/>
+  <property name="maven.artifact.projects.without.exec"
+    value="anttasks,cli,common,contrib,hbase-handler,hwi,jdbc,metastore,pdk,builtins,serde,service,shims"/>
 
   <!-- Ignore Postgres upgrade scripts unless 'include.postgres' is true -->
   <condition property="metastore.excludes"
@@ -981,65 +985,19 @@
     <!-- call make pom on all projects that have ivy.xml -->
     <iterate-all target="make-pom" />
 
-    <!-- copy the jars  -->
-    <copy file="${build.dir.hive}/anttasks/hive-anttasks-${version}.jar"
-          todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/cli/hive-cli-${version}.jar"
-          todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/common/hive-common-${version}.jar"
-          todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/contrib/hive-contrib-${version}.jar"
-          todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/hbase-handler/hive-hbase-handler-${version}.jar"
-          todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/hwi/hive-hwi-${version}.jar"
-          todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/jdbc/hive-jdbc-${version}.jar"
-          todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/metastore/hive-metastore-${version}.jar"
-          todir="${mvn.jar.dir}" />
+    <for list="${maven.artifact.projects.without.exec}" param="maven.artifact.project">
+      <sequential>
+        <copy file="${build.dir.hive}/@{maven.artifact.project}/hive-@{maven.artifact.project}-${version}.jar"
+              todir="${mvn.jar.dir}"/>
+        <copy file="${build.dir.hive}/@{maven.artifact.project}/pom.xml"
+              tofile="${mvn.pom.dir}/hive-@{maven.artifact.project}-${version}.pom"/>
+      </sequential>
+    </for>
+
     <copy file="${build.dir.hive}/ql/hive-exec-${version}.jar"
           todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/serde/hive-serde-${version}.jar"
-          todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/service/hive-service-${version}.jar"
-          todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/shims/hive-shims-${version}.jar"
-          todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/pdk/hive-pdk-${version}.jar"
-          todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/builtins/hive-builtins-${version}.jar"
-          todir="${mvn.jar.dir}" />
-
-    <!-- copy over maven pom files created using the make-pom target and rename to maven convention -->
-    <copy file="${build.dir.hive}/anttasks/pom.xml"
-          tofile="${mvn.pom.dir}/hive-anttasks-${version}.pom" />
-    <copy file="${build.dir.hive}/cli/pom.xml"
-          tofile="${mvn.pom.dir}/hive-cli-${version}.pom" />
-    <copy file="${build.dir.hive}/common/pom.xml"
-          tofile="${mvn.pom.dir}/hive-common-${version}.pom" />
-    <copy file="${build.dir.hive}/contrib/pom.xml"
-          tofile="${mvn.pom.dir}/hive-contrib-${version}.pom" />
-    <copy file="${build.dir.hive}/hbase-handler/pom.xml"
-          tofile="${mvn.pom.dir}/hive-hbase-handler-${version}.pom" />
-    <copy file="${build.dir.hive}/hwi/pom.xml"
-          tofile="${mvn.pom.dir}/hive-hwi-${version}.pom" />
-    <copy file="${build.dir.hive}/jdbc/pom.xml"
-          tofile="${mvn.pom.dir}/hive-jdbc-${version}.pom" />
-    <copy file="${build.dir.hive}/metastore/pom.xml"
-          tofile="${mvn.pom.dir}/hive-metastore-${version}.pom" />
     <copy file="${build.dir.hive}/ql/pom.xml"
           tofile="${mvn.pom.dir}/hive-exec-${version}.pom" />
-    <copy file="${build.dir.hive}/serde/pom.xml"
-          tofile="${mvn.pom.dir}/hive-serde-${version}.pom" />
-    <copy file="${build.dir.hive}/service/pom.xml"
-          tofile="${mvn.pom.dir}/hive-service-${version}.pom" />
-    <copy file="${build.dir.hive}/shims/pom.xml"
-          tofile="${mvn.pom.dir}/hive-shims-${version}.pom" />
-    <copy file="${build.dir.hive}/pdk/pom.xml"
-          tofile="${mvn.pom.dir}/hive-pdk-${version}.pom" />
-    <copy file="${build.dir.hive}/builtins/pom.xml"
-          tofile="${mvn.pom.dir}/hive-builtins-${version}.pom" />
 
     <!-- copy over licence -->
     <copy file="${hive.root}/LICENSE" todir="${mvn.license.dir}" />
@@ -1113,48 +1071,13 @@
   <target name="maven-publish" depends="init,mvn-taskdef,maven-sign"
           description="Publish Maven artifacts">
     <echo message="Project: ${ant.project.name}"/>
-    <antcall target="maven-publish-artifact">
-      <param name="hive.project" value="anttasks" />
-    </antcall>
-    <antcall target="maven-publish-artifact">
-      <param name="hive.project" value="cli" />
-    </antcall>
-    <antcall target="maven-publish-artifact">
-      <param name="hive.project" value="common" />
-    </antcall>
-    <antcall target="maven-publish-artifact">
-      <param name="hive.project" value="contrib" />
-    </antcall>
-    <antcall target="maven-publish-artifact">
-      <param name="hive.project" value="exec" />
-    </antcall>
-    <antcall target="maven-publish-artifact">
-      <param name="hive.project" value="hbase-handler" />
-    </antcall>
-    <antcall target="maven-publish-artifact">
-      <param name="hive.project" value="hwi" />
-    </antcall>
-    <antcall target="maven-publish-artifact">
-      <param name="hive.project" value="pdk" />
-    </antcall>
-    <antcall target="maven-publish-artifact">
-      <param name="hive.project" value="builtins" />
-    </antcall>
-    <antcall target="maven-publish-artifact">
-      <param name="hive.project" value="jdbc" />
-    </antcall>
-    <antcall target="maven-publish-artifact">
-      <param name="hive.project" value="metastore" />
-    </antcall>
-    <antcall target="maven-publish-artifact">
-      <param name="hive.project" value="serde" />
-    </antcall>
-    <antcall target="maven-publish-artifact">
-      <param name="hive.project" value="service" />
-    </antcall>
-    <antcall target="maven-publish-artifact">
-      <param name="hive.project" value="shims" />
-    </antcall>
+    <for list="${maven.artifact.projects}" param="maven.artifact.project">
+      <sequential>
+        <antcall target="maven-publish-artifact">
+          <param name="hive.project" value="@{maven.artifact.project}"/>
+        </antcall>
+      </sequential>
+    </for>
   </target>
 
   <target name="maven-sign" if="staging">
@@ -1179,118 +1102,19 @@
         </exec>
       </sequential>
     </macrodef>
-    <sign-artifact
-        input.file="${mvn.jar.dir}/hive-anttasks-${version}.jar"
-        output.file="${mvn.jar.dir}/hive-anttasks-${version}.jar.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.pom.dir}/hive-anttasks-${version}.pom"
-        output.file="${mvn.pom.dir}/hive-anttasks-${version}.pom.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.jar.dir}/hive-cli-${version}.jar"
-        output.file="${mvn.jar.dir}/hive-cli-${version}.jar.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.pom.dir}/hive-cli-${version}.pom"
-        output.file="${mvn.pom.dir}/hive-cli-${version}.pom.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.jar.dir}/hive-common-${version}.jar"
-        output.file="${mvn.jar.dir}/hive-common-${version}.jar.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.pom.dir}/hive-common-${version}.pom"
-        output.file="${mvn.pom.dir}/hive-common-${version}.pom.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.jar.dir}/hive-contrib-${version}.jar"
-        output.file="${mvn.jar.dir}/hive-contrib-${version}.jar.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.pom.dir}/hive-contrib-${version}.pom"
-        output.file="${mvn.pom.dir}/hive-contrib-${version}.pom.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.jar.dir}/hive-hbase-handler-${version}.jar"
-        output.file="${mvn.jar.dir}/hive-hbase-handler-${version}.jar.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.pom.dir}/hive-hbase-handler-${version}.pom"
-        output.file="${mvn.pom.dir}/hive-hbase-handler-${version}.pom.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.jar.dir}/hive-hwi-${version}.jar"
-        output.file="${mvn.jar.dir}/hive-hwi-${version}.jar.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.pom.dir}/hive-hwi-${version}.pom"
-        output.file="${mvn.pom.dir}/hive-hwi-${version}.pom.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.jar.dir}/hive-jdbc-${version}.jar"
-        output.file="${mvn.jar.dir}/hive-jdbc-${version}.jar.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.pom.dir}/hive-jdbc-${version}.pom"
-        output.file="${mvn.pom.dir}/hive-jdbc-${version}.pom.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.jar.dir}/hive-metastore-${version}.jar"
-        output.file="${mvn.jar.dir}/hive-metastore-${version}.jar.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.pom.dir}/hive-metastore-${version}.pom"
-        output.file="${mvn.pom.dir}/hive-metastore-${version}.pom.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.jar.dir}/hive-exec-${version}.jar"
-        output.file="${mvn.jar.dir}/hive-exec-${version}.jar.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.pom.dir}/hive-exec-${version}.pom"
-        output.file="${mvn.pom.dir}/hive-exec-${version}.pom.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.jar.dir}/hive-pdk-${version}.jar"
-        output.file="${mvn.jar.dir}/hive-pdk-${version}.jar.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.pom.dir}/hive-pdk-${version}.pom"
-        output.file="${mvn.pom.dir}/hive-pdk-${version}.pom.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.jar.dir}/hive-builtins-${version}.jar"
-        output.file="${mvn.jar.dir}/hive-builtins-${version}.jar.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.pom.dir}/hive-builtins-${version}.pom"
-        output.file="${mvn.pom.dir}/hive-builtins-${version}.pom.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.jar.dir}/hive-serde-${version}.jar"
-        output.file="${mvn.jar.dir}/hive-serde-${version}.jar.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.pom.dir}/hive-serde-${version}.pom"
-        output.file="${mvn.pom.dir}/hive-serde-${version}.pom.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.jar.dir}/hive-service-${version}.jar"
-        output.file="${mvn.jar.dir}/hive-service-${version}.jar.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.pom.dir}/hive-service-${version}.pom"
-        output.file="${mvn.pom.dir}/hive-service-${version}.pom.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.jar.dir}/hive-shims-${version}.jar"
-        output.file="${mvn.jar.dir}/hive-shims-${version}.jar.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-    <sign-artifact
-        input.file="${mvn.pom.dir}/hive-shims-${version}.pom"
-        output.file="${mvn.pom.dir}/hive-shims-${version}.pom.asc"
-        gpg.passphrase="${gpg.passphrase}"/>
-  </target>  
-  
+
+    <for list="${maven.artifact.projects}" param="maven.artifact.project">
+      <sequential>
+        <sign-artifact
+          input.file="${mvn.jar.dir}/hive-@{maven.artifact.project}-${version}.jar"
+          output.file="${mvn.jar.dir}/hive-@{maven.artifact.project}-${version}.jar.asc"
+          gpg.passphrase="${gpg.passphrase}"/>
+        <sign-artifact
+          input.file="${mvn.pom.dir}/hive-@{maven.artifact.project}-${version}.pom"
+          output.file="${mvn.pom.dir}/hive-@{maven.artifact.project}-${version}.pom.asc"
+          gpg.passphrase="${gpg.passphrase}"/>
+      </sequential>
+    </for>
+  </target>
+
 </project>
