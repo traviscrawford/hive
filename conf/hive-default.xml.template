@@ -1272,4 +1272,25 @@
   </description>
 </property>
 
+<property>
+  <name>hive.script.escape.newlines</name>
+  <value>false</value>
+  <description>
+    This adds an option to escape the newlines when they are passed to the 
+    user script. This is useful is the hive tables can contain data that
+    can contain newlines.
+  </description>
+</property>
+
+<property>
+  <name>hive.exec.rcfile.use.explicit.header</name>
+  <value>true</value>
+  <description>
+    If this is set the header for RC Files will simply be RCF.  If this is not
+    set the header will be that borrowed from sequence files, e.g. SEQ- followed
+    by the input and output RC File formats.
+  </description>
+</property>
+
 </configuration>
+
