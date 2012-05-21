@@ -645,7 +645,7 @@
   <!-- Documentation                                                      -->
   <!-- ================================================================== -->
 
-  <target name="docs" description="Generate documentation">
+  <target name="docs" description="Generate documentation" depends="ivy-init-antlib">
     <echo message="Project: ${ant.project.name}"/>
     <antcall target="docs-anakia"/>
   </target>
@@ -696,6 +696,10 @@
       <classpath >
         <path refid="classpath" />
         <pathelement path="${java.class.path}"/>
+        <pathelement 
+           path="${build.ivy.lib.dir}/default/hadoop-core-${hadoop-0.20.version}.jar"/>
+        <pathelement 
+           path="${build.ivy.lib.dir}/default/hadoop-test-${hadoop-0.20.version}.jar"/>
       </classpath>
 
       <group title="Hive" packages="org.apache.*"/>
