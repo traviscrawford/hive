@@ -37,6 +37,7 @@ import javax.security.auth.login.LoginException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
@@ -67,6 +68,7 @@ import org.apache.hadoop.hive.shims.HadoopShims;
 import org.apache.hadoop.hive.shims.ShimLoader;
 import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -155,7 +157,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
       throw new MetaException("MetaStoreURIs not found in conf file");
     }
     // finally open the store
-    open();
+    setupClient();
   }
 
   /**
@@ -189,6 +191,28 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
   public void renamePartition(final String dbname, final String name, final List<String> part_vals, final Partition newPart)
       throws InvalidOperationException, MetaException, TException {
     client.rename_partition(dbname, name, part_vals, newPart);
+  }
+
+  private void setupClient() throws MetaException {
+    if ("".equals(conf.getVar(ConfVars.METASTORE_THRIFT_CLIENT_CLS))) {
+      open();
+    }
+
+    String thriftClientClassName = conf.getVar(ConfVars.METASTORE_THRIFT_CLIENT_CLS);
+    try {
+      Class<? extends ThriftClient> klass =
+          conf.getClassByName(thriftClientClassName).asSubclass(ThriftClient.class);
+      ThriftClient thriftClient = ReflectionUtils.newInstance(klass, conf);
+      client = thriftClient.getClient();
+    } catch (ClassNotFoundException e) {
+      throw new RuntimeException("Error initializing thrift client " + thriftClientClassName, e);
+    }
+  }
+
+  public abstract class ThriftClient implements Configurable {
+    public ThriftHiveMetastore.Iface getClient() {
+      return null;
+    }
   }
 
   private void open() throws MetaException {

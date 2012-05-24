@@ -266,6 +266,7 @@ public class HiveConf extends Configuration {
     METASTORE_KERBEROS_KEYTAB_FILE("hive.metastore.kerberos.keytab.file", ""),
     METASTORE_KERBEROS_PRINCIPAL("hive.metastore.kerberos.principal",
         "hive-metastore/_HOST@EXAMPLE.COM"),
+    METASTORE_THRIFT_CLIENT_CLS("hive.metastore.thrift.client.class", ""),
     METASTORE_USE_THRIFT_SASL("hive.metastore.sasl.enabled", false),
     METASTORE_USE_THRIFT_FRAMED_TRANSPORT("hive.metastore.thrift.framed.transport.enabled", false),
     METASTORE_CLUSTER_DELEGATION_TOKEN_STORE_CLS(
