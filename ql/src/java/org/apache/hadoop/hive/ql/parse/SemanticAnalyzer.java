@@ -47,6 +47,7 @@ import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.Order;
 import org.apache.hadoop.hive.ql.Context;
+import org.apache.hadoop.hive.ql.ErrorMsg;
 import org.apache.hadoop.hive.ql.QueryProperties;
 import org.apache.hadoop.hive.ql.exec.AbstractMapJoinOperator;
 import org.apache.hadoop.hive.ql.exec.ArchiveUtils;
@@ -496,8 +497,13 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
     String tabIdName = getUnescapedName(tableTree);
 
-    String alias = (aliasIndex != 0) ?
-        unescapeIdentifier(tabref.getChild(aliasIndex).getText()) : tabIdName;
+    String alias;
+    if (aliasIndex != 0) {
+      alias = unescapeIdentifier(tabref.getChild(aliasIndex).getText());
+    }
+    else {
+      alias = getUnescapedUnqualifiedTableName(tableTree);
+    }
 
     // If the alias is already there then we have a conflict
     if (qb.exists(alias)) {
@@ -556,7 +562,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
     qb.getParseInfo().setSrcForAlias(alias, tableTree);
 
-    unparseTranslator.addTableNameTranslation(tableTree);
+    unparseTranslator.addTableNameTranslation(tableTree, db.getCurrentDatabase());
     if (aliasIndex != 0) {
       unparseTranslator.addIdentifierTranslation((ASTNode) tabref
           .getChild(aliasIndex));
@@ -977,11 +983,6 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         }
 
         if (tab.isView()) {
-          // TODO: add support to referencing views in foreign databases.
-          if (!tab.getDbName().equals(db.getCurrentDatabase())) {
-            throw new SemanticException(ErrorMsg.INVALID_TABLE_ALIAS.
-                getMsg("Referencing view from foreign databases is not supported."));
-          }
           if (qb.getParseInfo().isAnalyzeCommand()) {
             throw new SemanticException(ErrorMsg.ANALYZE_VIEW.getMsg());
           }
@@ -1894,6 +1895,11 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       throw new SemanticException(e);
     }
 
+    int fieldSeparator = Utilities.tabCode;
+    if (HiveConf.getBoolVar(conf, HiveConf.ConfVars.HIVESCRIPTESCAPE)) {
+      fieldSeparator = Utilities.ctrlaCode;
+    }
+
     // Input and Output Serdes
     if (trfm.getChild(inputSerDeNum).getChildCount() > 0) {
       inInfo = getTableDescFromSerDe((ASTNode) (((ASTNode) trfm
@@ -1901,7 +1907,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
           inpColumnTypes.toString(), false);
     } else {
       inInfo = PlanUtils.getTableDesc(serde, Integer
-          .toString(Utilities.tabCode), inpColumns.toString(), inpColumnTypes
+          .toString(fieldSeparator), inpColumns.toString(), inpColumnTypes
           .toString(), false, true);
     }
 
@@ -1915,7 +1921,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       // requirement is: key is col and value is (col2 TAB col3)
     } else {
       outInfo = PlanUtils.getTableDesc(serde, Integer
-          .toString(Utilities.tabCode), columns.toString(), columnTypes
+          .toString(fieldSeparator), columns.toString(), columnTypes
           .toString(), defaultOutputCols);
     }
 
@@ -5307,7 +5313,8 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         // leftAliases should contain the first table, rightAliases should
         // contain all other tables and baseSrc should contain all tables
 
-        String tableName = getUnescapedName((ASTNode)child.getChild(0));
+        String tableName = getUnescapedUnqualifiedTableName((ASTNode) child.getChild(0));
+
         String alias = child.getChildCount() == 1 ? tableName
             : unescapeIdentifier(child.getChild(child.getChildCount() - 1)
             .getText().toLowerCase());
@@ -5410,8 +5417,9 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
     if ((left.getToken().getType() == HiveParser.TOK_TABREF)
         || (left.getToken().getType() == HiveParser.TOK_SUBQUERY)) {
-      String table_name = getUnescapedName((ASTNode)left.getChild(0));
-      String alias = left.getChildCount() == 1 ? table_name
+      String tableName = getUnescapedUnqualifiedTableName((ASTNode) left.getChild(0))
+        .toLowerCase();
+      String alias = left.getChildCount() == 1 ? tableName
           : unescapeIdentifier(left.getChild(left.getChildCount() - 1)
           .getText().toLowerCase());
       joinTree.setLeftAlias(alias);
@@ -5437,7 +5445,8 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
     if ((right.getToken().getType() == HiveParser.TOK_TABREF)
         || (right.getToken().getType() == HiveParser.TOK_SUBQUERY)) {
-      String tableName = getUnescapedName((ASTNode)right.getChild(0));
+      String tableName = getUnescapedUnqualifiedTableName((ASTNode) right.getChild(0))
+        .toLowerCase();
       String alias = right.getChildCount() == 1 ? tableName
           : unescapeIdentifier(right.getChild(right.getChildCount() - 1)
           .getText().toLowerCase());

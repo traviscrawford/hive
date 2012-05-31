@@ -37,6 +37,7 @@ import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Order;
 import org.apache.hadoop.hive.ql.Context;
+import org.apache.hadoop.hive.ql.ErrorMsg;
 import org.apache.hadoop.hive.ql.QueryProperties;
 import org.apache.hadoop.hive.ql.exec.FetchTask;
 import org.apache.hadoop.hive.ql.exec.Task;
@@ -328,6 +329,28 @@ public abstract class BaseSemanticAnalyzer {
     }
     return unescapeIdentifier(tableNameNode.getText());
   }
+
+  /**
+   * Get the unqualified name from a table node.
+   *
+   * This method works for table names qualified with their schema (e.g., "db.table")
+   * and table names without schema qualification. In both cases, it returns
+   * the table name without the schema.
+   *
+   * @param node the table node
+   * @return the table name without schema qualification
+   *         (i.e., if name is "db.table" or "table", returns "table")
+   */
+  public static String getUnescapedUnqualifiedTableName(ASTNode node) {
+    assert node.getChildCount() <= 2;
+
+    if (node.getChildCount() == 2) {
+      node = (ASTNode) node.getChild(1);
+    }
+
+    return getUnescapedName(node);
+  }
+
 
   /**
    * Remove the encapsulating "`" pair from the identifier. We allow users to

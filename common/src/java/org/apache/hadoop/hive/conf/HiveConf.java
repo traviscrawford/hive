@@ -207,8 +207,7 @@ public class HiveConf extends Configuration {
     // Properties with null values are ignored and exist only for the purpose of giving us
     // a symbolic name to reference in the Hive source code. Properties with non-null
     // values will override any values set in the underlying Hadoop configuration.
-    HADOOPBIN("hadoop.bin.path", System.getenv("HADOOP_HOME") + "/bin/hadoop"),
-    HADOOPCONF("hadoop.config.dir", System.getenv("HADOOP_HOME") + "/conf"),
+    HADOOPBIN("hadoop.bin.path", findHadoopBinary()),
     HADOOPFS("fs.default.name", null),
     HIVE_FS_HAR_IMPL("fs.har.impl", "org.apache.hadoop.hive.shims.HiveHarFileSystem"),
     HADOOPMAPFILENAME("map.input.file", null),
@@ -356,6 +355,7 @@ public class HiveConf extends Configuration {
     HIVEPARTITIONNAME("hive.partition.name", ""),
     HIVESCRIPTAUTOPROGRESS("hive.script.auto.progress", false),
     HIVESCRIPTIDENVVAR("hive.script.operator.id.env.var", "HIVE_SCRIPT_OPERATOR_ID"),
+    HIVESCRIPTTRUNCATEENV("hive.script.operator.truncate.env", false),
     HIVEMAPREDMODE("hive.mapred.mode", "nonstrict"),
     HIVEALIAS("hive.alias", ""),
     HIVEMAPSIDEAGGREGATE("hive.map.aggr", true),
@@ -390,6 +390,7 @@ public class HiveConf extends Configuration {
         "org.apache.hadoop.hive.ql.exec.TextRecordReader"),
     HIVESCRIPTRECORDWRITER("hive.script.recordwriter",
         "org.apache.hadoop.hive.ql.exec.TextRecordWriter"),
+    HIVESCRIPTESCAPE("hive.transform.escape.input", false),
 
     // HWI
     HIVEHWILISTENHOST("hive.hwi.listen.host", "0.0.0.0"),
@@ -420,6 +421,8 @@ public class HiveConf extends Configuration {
         "org.apache.hadoop.hive.ql.io.rcfile.merge.RCFileBlockMergeInputFormat"),
     HIVEMERGECURRENTJOBHASDYNAMICPARTITIONS(
         "hive.merge.current.job.has.dynamic.partitions", false),
+
+    HIVEUSEEXPLICITRCFILEHEADER("hive.exec.rcfile.use.explicit.header", true),
 
     HIVESKEWJOIN("hive.optimize.skewjoin", false),
     HIVECONVERTJOIN("hive.auto.convert.join", false),
@@ -646,6 +649,17 @@ public class HiveConf extends Configuration {
     public String toString() {
       return varname;
     }
+
+    private static String findHadoopBinary() {
+      String val = System.getenv("HADOOP_HOME");
+      // In Hadoop 1.X and Hadoop 2.X HADOOP_HOME is gone and replaced with HADOOP_PREFIX
+      if (val == null) {
+        val = System.getenv("HADOOP_PREFIX");
+      }
+      // and if all else fails we can at least try /usr/bin/hadoop
+      return (val == null ? File.separator + "usr" : val)
+        + File.separator + "bin" + File.separator + "hadoop";
+    }
   }
 
   /**
@@ -843,14 +857,6 @@ public class HiveConf extends Configuration {
     // Overlay hive-site.xml if it exists
     if (hiveSiteURL != null) {
       addResource(hiveSiteURL);
-    }
-
-    // if hadoop configuration files are already in our path - then define
-    // the containing directory as the configuration directory
-    URL hadoopconfurl = getClassLoader().getResource("core-site.xml");
-    if (hadoopconfurl != null) {
-      String conffile = hadoopconfurl.getPath();
-      this.setVar(ConfVars.HADOOPCONF, conffile.substring(0, conffile.lastIndexOf('/')));
     }
 
     // Overlay the values of any system properties whose names appear in the list of ConfVars

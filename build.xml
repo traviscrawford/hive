@@ -302,12 +302,16 @@
     <iterate target="jar"/>
   </target>
 
-  <target name="jar-test" depends="jar"
+  <target name="gen-test" depends="jar" description="Generate tests">
+    <iterate-test target="gen-test"/>
+  </target>
+  
+  <target name="jar-test" depends="gen-test"
           description="Build Java test artifacts">
     <echo message="Project: ${ant.project.name}"/>
     <iterate-test target="compile-test"/>
   </target>
-
+  
   <target name="test" depends="clean-test,jar-test" description="Run tests">
     <echo message="Project: ${ant.project.name}"/>
     <antcall target="test-shims">
@@ -382,18 +386,6 @@
   <target name="very-clean" unless="offline" depends="ivy-clean-cache,clean"
           description="Clean build artifacts and flush Ivy cache" />
 
-  <!-- ====================================================== -->
-  <!-- Generate some of the test data.                        -->
-  <!-- ====================================================== -->
-  <target name="gen-testdata"
-          depends="jar"
-          description="Generate test data">
-    <echo message="Project: ${ant.project.name}"/>
-    <subant target="gen-testdata">
-      <property name="build.dir.hive" location="${build.dir.hive}"/>
-      <fileset dir="." includes="serde/build.xml"/>
-    </subant>
-  </target>
 
   <target name="package-cpp"
           depends="package,compile-cpp"
@@ -490,7 +482,14 @@
 
     <!-- copy jar files -->
     <copy todir="${target.lib.dir}" preservelastmodified="true" flatten="true">
-      <fileset dir="${hive.root}" includes="*/*.jar, */*/*.jar" excludes="**/antlr-2*,**/antlr-3*,**/TestSerDe.jar"/>
+      <fileset dir="${hive.root}"  >
+        <include name="*/*.jar"/>
+        <include name="*/*/*.jar"/>
+        <exclude name="**/TestSerDe.jar"/>
+        <exclude name="build/hadoopcore/*.jar"/>
+        <exclude name="**/ant-contrib*.jar"/>
+        <exclude name="**/hive-anttasks*.jar"/>
+      </fileset>
       <fileset file="${build.dir.hive}/cli/hive-cli-${version}.jar"/>
       <fileset file="${build.dir.hive}/common/hive-common-${version}.jar"/>
       <fileset file="${build.dir.hive}/ql/hive-exec-${version}.jar"/>
@@ -501,6 +500,15 @@
       <fileset dir="${build.dir.hive}/ivy/lib/default">
         <include name="*.jar"/>
         <exclude name="*.tar.gz"/>
+        <exclude name="hadoop-*.jar" />
+	<exclude name="**/*high-scale-lib-*"/>
+        <exclude name="**/hamcrest-core-*jar"/>
+        <exclude name="**/junit*.jar"/>
+        <exclude name="**/asm*.jar"/>
+        <exclude name="**/mockito*.jar"/>
+        <exclude name="**/velocity*.jar"/>
+        <exclude name="**/antlr-3*.jar"/>
+        <exclude name="**/antlr-2*.jar"/>
       </fileset>
     </copy>
     <copy todir="${target.example.dir}/files" preservelastmodified="true" flatten="true">
@@ -541,7 +549,7 @@
   <!-- ====================================================== -->
   <!-- Generate files for eclipse.                            -->
   <!-- ====================================================== -->
-  <target name="eclipse-files" depends="init"
+  <target name="eclipse-files" depends="gen-test"
           description="Generate files for Eclipse">
     <echo message="Project: ${ant.project.name}"/>
     <condition property="hadoop.version.ant-internal" value="0.20">
@@ -637,7 +645,7 @@
   <!-- Documentation                                                      -->
   <!-- ================================================================== -->
 
-  <target name="docs" description="Generate documentation">
+  <target name="docs" description="Generate documentation" depends="ivy-init-antlib">
     <echo message="Project: ${ant.project.name}"/>
     <antcall target="docs-anakia"/>
   </target>
@@ -686,15 +694,12 @@
       <link href="${javadoc.link.java}"/>
 
       <classpath >
-        <fileset dir="${hadoop.root}/lib">
-          <include name="**/*.jar" />
-          <exclude name="**/excluded/" />
-	  <exclude name="**/commons-logging-*.jar" />
-	  <exclude name="**/commons-codec-*.jar" />
-        </fileset>
-	<pathelement path="${hadoop.oldstyle-name.test.jar}"/>
         <path refid="classpath" />
         <pathelement path="${java.class.path}"/>
+        <pathelement 
+           path="${build.ivy.lib.dir}/default/hadoop-core-${hadoop-0.20.version}.jar"/>
+        <pathelement 
+           path="${build.ivy.lib.dir}/default/hadoop-test-${hadoop-0.20.version}.jar"/>
       </classpath>
 
       <group title="Hive" packages="org.apache.*"/>
@@ -962,7 +967,7 @@
 	     uri="urn:maven-artifact-ant" classpathref="maven-ant-tasks.classpath" />
   </target>
   
-  <target name="maven-build" depends="jar" description="Build Maven artifacts">
+  <target name="maven-build" depends="package" description="Build Maven artifacts">
     <echo message="Project: ${ant.project.name}"/>
     <!-- create jars, poms licences directory -->
     <mkdir dir="${mvn.jar.dir}" />

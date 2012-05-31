@@ -307,15 +307,17 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
 
   public void close() {
     isConnected = false;
-    if ((transport != null) && transport.isOpen()) {
-      transport.close();
-    }
     try {
       if (null != client) {
         client.shutdown();
       }
     } catch (TException e) {
       LOG.error("Unable to shutdown local metastore client", e);
+    }
+    // Transport would have got closed via client.shutdown(), so we dont need this, but
+    // just in case, we make this call.
+    if ((transport != null) && transport.isOpen()) {
+      transport.close();
     }
   }
 
@@ -455,6 +457,13 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
         throw e;
       }
       return;
+    }
+
+    if (cascade) {
+       List<String> tableList = getAllTables(name);
+       for (String table : tableList) {
+            dropTable(name, table, deleteData, false);
+        }
     }
     client.drop_database(name, deleteData, cascade);
   }

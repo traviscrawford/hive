@@ -29,6 +29,7 @@ import org.apache.hadoop.hive.ql.security.HadoopDefaultAuthenticator;
 import org.apache.hadoop.hive.ql.security.HiveAuthenticationProvider;
 import org.apache.hadoop.hive.ql.security.authorization.DefaultHiveAuthorizationProvider;
 import org.apache.hadoop.hive.ql.security.authorization.HiveAuthorizationProvider;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.util.ReflectionUtils;
 
 /**
@@ -94,6 +95,149 @@ public final class HiveUtils {
       }
     }
     return (escape.toString());
+  }
+
+  static final byte[] escapeEscapeBytes = "\\\\".getBytes();;
+  static final byte[] escapeUnescapeBytes = "\\".getBytes();
+  static final byte[] newLineEscapeBytes = "\\n".getBytes();;
+  static final byte[] newLineUnescapeBytes = "\n".getBytes();
+  static final byte[] carriageReturnEscapeBytes = "\\r".getBytes();;
+  static final byte[] carriageReturnUnescapeBytes = "\r".getBytes();
+  static final byte[] tabEscapeBytes = "\\t".getBytes();;
+  static final byte[] tabUnescapeBytes = "\t".getBytes();
+  static final byte[] ctrlABytes = "\u0001".getBytes();
+
+  public static Text escapeText(Text text) {
+    int length = text.getLength();
+    byte[] textBytes = text.getBytes();
+
+    Text escape = new Text(text);
+    escape.clear();
+
+    for (int i = 0; i < length; ++i) {
+      int c = text.charAt(i);
+      byte[] escaped;
+      int start;
+      int len;
+
+      switch (c) {
+
+      case '\\':
+        escaped = escapeEscapeBytes;
+        start = 0;
+        len = escaped.length;
+        break;
+
+      case '\n':
+        escaped = newLineEscapeBytes;
+        start = 0;
+        len = escaped.length;
+        break;
+
+      case '\r':
+        escaped = carriageReturnEscapeBytes;
+        start = 0;
+        len = escaped.length;
+        break;
+
+      case '\t':
+        escaped = tabEscapeBytes;
+        start = 0;
+        len = escaped.length;
+        break;
+
+      case '\u0001':
+        escaped = tabUnescapeBytes;
+        start = 0;
+        len = escaped.length;
+        break;
+
+      default:
+        escaped = textBytes;
+        start = i;
+        len = 1;
+        break;
+      }
+
+      escape.append(escaped, start, len);
+
+    }
+    return escape;
+  }
+
+  public static int unescapeText(Text text) {
+    Text escape = new Text(text);
+    text.clear();
+
+    int length = escape.getLength();
+    byte[] textBytes = escape.getBytes();
+
+    boolean hadSlash = false;
+    for (int i = 0; i < length; ++i) {
+      int c = escape.charAt(i);
+      switch (c) {
+      case '\\':
+        if (hadSlash) {
+          text.append(textBytes, i, 1);
+          hadSlash = false;
+        }
+        else {
+          hadSlash = true;
+        }
+        break;
+      case 'n':
+        if (hadSlash) {
+          byte[] newLine = newLineUnescapeBytes;
+          text.append(newLine, 0, newLine.length);
+        }
+        else {
+          text.append(textBytes, i, 1);
+        }
+        hadSlash = false;
+        break;
+      case 'r':
+        if (hadSlash) {
+          byte[] carriageReturn = carriageReturnUnescapeBytes;
+          text.append(carriageReturn, 0, carriageReturn.length);
+        }
+        else {
+          text.append(textBytes, i, 1);
+        }
+        hadSlash = false;
+        break;
+
+      case 't':
+        if (hadSlash) {
+          byte[] tab = tabUnescapeBytes;
+          text.append(tab, 0, tab.length);
+        }
+        else {
+          text.append(textBytes, i, 1);
+        }
+        hadSlash = false;
+        break;
+
+      case '\t':
+        if (hadSlash) {
+          text.append(textBytes, i-1, 1);
+          hadSlash = false;
+        }
+
+        byte[] ctrlA = ctrlABytes;
+        text.append(ctrlA, 0, ctrlA.length);
+        break;
+
+      default:
+        if (hadSlash) {
+          text.append(textBytes, i-1, 1);
+          hadSlash = false;
+        }
+
+        text.append(textBytes, i, 1);
+        break;
+      }
+    }
+    return text.getLength();
   }
 
   public static String lightEscapeString(String str) {
