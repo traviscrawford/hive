@@ -42,6 +42,7 @@ import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.Order;
 import org.apache.hadoop.hive.metastore.api.Partition;
+import org.apache.hadoop.hive.ql.ErrorMsg;
 import org.apache.hadoop.hive.ql.exec.Task;
 import org.apache.hadoop.hive.ql.exec.TaskFactory;
 import org.apache.hadoop.hive.ql.exec.Utilities;
@@ -111,8 +112,7 @@ public class ImportSemanticAnalyzer extends BaseSemanticAnalyzer {
             table.getSd().getSerdeInfo().getSerializationLib(),
             null, // storagehandler passed as table params
             table.getSd().getSerdeInfo().getParameters(),
-            table.getParameters(), false,
-            table.getSd().getPrimaryRegionName());
+            table.getParameters(), false);
 
 
         List<FieldSchema> partCols = tblDesc.getPartCols();

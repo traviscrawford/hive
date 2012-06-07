@@ -50,6 +50,7 @@ import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.Order;
 import org.apache.hadoop.hive.metastore.api.PrincipalType;
 import org.apache.hadoop.hive.ql.Driver;
+import org.apache.hadoop.hive.ql.ErrorMsg;
 import org.apache.hadoop.hive.ql.exec.ArchiveUtils;
 import org.apache.hadoop.hive.ql.exec.FetchTask;
 import org.apache.hadoop.hive.ql.exec.Task;
@@ -105,6 +106,7 @@ import org.apache.hadoop.hive.ql.plan.ShowLocksDesc;
 import org.apache.hadoop.hive.ql.plan.ShowPartitionsDesc;
 import org.apache.hadoop.hive.ql.plan.ShowTableStatusDesc;
 import org.apache.hadoop.hive.ql.plan.ShowTablesDesc;
+import org.apache.hadoop.hive.ql.plan.ShowTblPropertiesDesc;
 import org.apache.hadoop.hive.ql.plan.StatsWork;
 import org.apache.hadoop.hive.ql.plan.SwitchDatabaseDesc;
 import org.apache.hadoop.hive.ql.plan.TableDesc;
@@ -230,6 +232,10 @@ public class DDLSemanticAnalyzer extends BaseSemanticAnalyzer {
     case HiveParser.TOK_SHOW_TABLESTATUS:
       ctx.setResFile(new Path(ctx.getLocalTmpFileURI()));
       analyzeShowTableStatus(ast);
+      break;
+    case HiveParser.TOK_SHOW_TBLPROPERTIES:
+      ctx.setResFile(new Path(ctx.getLocalTmpFileURI()));
+      analyzeShowTableProperties(ast);
       break;
     case HiveParser.TOK_SHOWFUNCTIONS:
       ctx.setResFile(new Path(ctx.getLocalTmpFileURI()));
@@ -707,7 +713,7 @@ public class DDLSemanticAnalyzer extends BaseSemanticAnalyzer {
     }
 
     DropTableDesc dropTblDesc = new DropTableDesc(
-      tableName, expectView, ifExists);
+      tableName, expectView, ifExists, true);
     rootTasks.add(TaskFactory.get(new DDLWork(getInputs(), getOutputs(),
         dropTblDesc), conf));
   }
@@ -1482,6 +1488,21 @@ public class DDLSemanticAnalyzer extends BaseSemanticAnalyzer {
     setFetchTask(createFetchTask(showTblStatusDesc.getSchema()));
   }
 
+  private void analyzeShowTableProperties(ASTNode ast) throws SemanticException {
+    ShowTblPropertiesDesc showTblPropertiesDesc;
+    String tableNames = getUnescapedName((ASTNode)ast.getChild(0));
+    String dbName = db.getCurrentDatabase();
+    String propertyName = null;
+    if (ast.getChildCount() > 1) {
+      propertyName = unescapeSQLString(ast.getChild(1).getText());
+    }
+    showTblPropertiesDesc = new ShowTblPropertiesDesc(ctx.getResFile().toString(), tableNames,
+        propertyName);
+    rootTasks.add(TaskFactory.get(new DDLWork(getInputs(), getOutputs(),
+        showTblPropertiesDesc), conf));
+    setFetchTask(createFetchTask(showTblPropertiesDesc.getSchema()));
+  }
+
   private void analyzeShowIndexes(ASTNode ast) throws SemanticException {
     ShowIndexesDesc showIndexesDesc;
     String tableName = getUnescapedName((ASTNode)ast.getChild(0));
@@ -1769,16 +1790,36 @@ public class DDLSemanticAnalyzer extends BaseSemanticAnalyzer {
     String tblName = getUnescapedName((ASTNode)ast.getChild(0));
     // get table metadata
     List<PartitionSpec> partSpecs = getFullPartitionSpecs(ast);
-    DropTableDesc dropTblDesc =
-      new DropTableDesc(tblName, partSpecs, expectView);
+    Table tab = null;
 
     try {
-      Table tab = db.getTable(db.getCurrentDatabase(), tblName, false);
+      tab = db.getTable(db.getCurrentDatabase(), tblName, false);
       if (tab != null) {
         inputs.add(new ReadEntity(tab));
       }
     } catch (HiveException e) {
       throw new SemanticException(ErrorMsg.INVALID_TABLE.getMsg(tblName));
+    }
+
+    // Find out if all partition columns are strings. This is needed for JDO
+    boolean stringPartitionColumns = true;
+    List<FieldSchema> partCols = tab.getPartCols();
+
+    for (FieldSchema partCol : partCols) {
+      if (!partCol.getType().toLowerCase().equals("string")) {
+        stringPartitionColumns = false;
+        break;
+      }
+    }
+
+    // Only equality is supported for non-string partition columns
+    if (!stringPartitionColumns) {
+      for (PartitionSpec partSpec : partSpecs) {
+        if (partSpec.isNonEqualityOperator()) {
+          throw new SemanticException(
+            ErrorMsg.DROP_PARTITION_NON_STRING_PARTCOLS_NONEQUALITY.getMsg());
+        }
+      }
     }
 
     if (partSpecs != null) {
@@ -1787,8 +1828,11 @@ public class DDLSemanticAnalyzer extends BaseSemanticAnalyzer {
       // configured not to fail silently
       boolean throwException =
         !ifExists && !HiveConf.getBoolVar(conf, ConfVars.DROPIGNORESNONEXISTENT);
-      addTableDropPartsOutputs(tblName, partSpecs, throwException);
+      addTableDropPartsOutputs(tblName, partSpecs, throwException, stringPartitionColumns);
     }
+
+    DropTableDesc dropTblDesc =
+        new DropTableDesc(tblName, partSpecs, expectView, stringPartitionColumns);
 
     rootTasks.add(TaskFactory.get(new DDLWork(getInputs(), getOutputs(),
         dropTblDesc), conf));
@@ -2197,7 +2241,7 @@ public class DDLSemanticAnalyzer extends BaseSemanticAnalyzer {
    * throwIfNonExistent is true, otherwise ignore it.
    */
   private void addTableDropPartsOutputs(String tblName, List<PartitionSpec> partSpecs,
-            boolean throwIfNonExistent)
+            boolean throwIfNonExistent, boolean stringPartitionColumns)
     throws SemanticException {
     Table tab;
     try {
@@ -2211,11 +2255,21 @@ public class DDLSemanticAnalyzer extends BaseSemanticAnalyzer {
     for (i = partSpecs.iterator(), index = 1; i.hasNext(); ++index) {
       PartitionSpec partSpec = i.next();
       List<Partition> parts = null;
-      try {
-        parts = db.getPartitionsByFilter(tab, partSpec.toString());
-      } catch (Exception e) {
-          throw new SemanticException(ErrorMsg.INVALID_PARTITION.getMsg(partSpec.toString()), e);
+      if (stringPartitionColumns) {
+        try {
+          parts = db.getPartitionsByFilter(tab, partSpec.toString());
+        } catch (Exception e) {
+            throw new SemanticException(ErrorMsg.INVALID_PARTITION.getMsg(partSpec.toString()), e);
+        }
       }
+      else {
+        try {
+          parts = db.getPartitions(tab, partSpec.getPartSpecWithoutOperator());
+        } catch (Exception e) {
+            throw new SemanticException(ErrorMsg.INVALID_PARTITION.getMsg(partSpec.toString()), e);
+        }
+      }
+
       if (parts.isEmpty()) {
         if(throwIfNonExistent) {
           throw new SemanticException(ErrorMsg.INVALID_PARTITION.getMsg(partSpec.toString()));

@@ -31,6 +31,7 @@ import java.util.Stack;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.hive.ql.ErrorMsg;
 import org.apache.hadoop.hive.ql.exec.ColumnInfo;
 import org.apache.hadoop.hive.ql.exec.FunctionInfo;
 import org.apache.hadoop.hive.ql.exec.FunctionRegistry;
@@ -683,6 +684,15 @@ public final class TypeCheckProcFactory {
         // supported
         if (fi.getGenericUDTF() != null) {
           throw new SemanticException(ErrorMsg.UDTF_INVALID_LOCATION.getMsg());
+        }
+        // UDAF in filter condition, group-by caluse, param of funtion, etc.
+        if (fi.getGenericUDAFResolver() != null) {
+          if (isFunction) {
+            throw new SemanticException(ErrorMsg.UDAF_INVALID_LOCATION.
+                getMsg((ASTNode) expr.getChild(0)));
+          } else {
+            throw new SemanticException(ErrorMsg.UDAF_INVALID_LOCATION.getMsg(expr));
+          }
         }
         if (!ctx.getAllowStatefulFunctions() && (fi.getGenericUDF() != null)) {
           if (FunctionRegistry.isStateful(fi.getGenericUDF())) {

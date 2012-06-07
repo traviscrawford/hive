@@ -136,6 +136,7 @@ import org.apache.hadoop.hive.ql.plan.ShowLocksDesc;
 import org.apache.hadoop.hive.ql.plan.ShowPartitionsDesc;
 import org.apache.hadoop.hive.ql.plan.ShowTableStatusDesc;
 import org.apache.hadoop.hive.ql.plan.ShowTablesDesc;
+import org.apache.hadoop.hive.ql.plan.ShowTblPropertiesDesc;
 import org.apache.hadoop.hive.ql.plan.SwitchDatabaseDesc;
 import org.apache.hadoop.hive.ql.plan.UnlockTableDesc;
 import org.apache.hadoop.hive.ql.plan.api.StageType;
@@ -190,10 +191,11 @@ public class DDLTask extends Task<DDLWork> implements Serializable {
     // Pick the formatter to use to display the results.  Either the
     // normal human readable output or a json object.
     if ("json".equals(conf.get(
-            HiveConf.ConfVars.HIVE_DDL_OUTPUT_FORMAT.varname, "text")))
+            HiveConf.ConfVars.HIVE_DDL_OUTPUT_FORMAT.varname, "text"))) {
       formatter = new JsonMetaDataFormatter();
-    else
+    } else {
       formatter = new TextMetaDataFormatter();
+    }
 
     INTERMEDIATE_ARCHIVED_DIR_SUFFIX =
       HiveConf.getVar(conf, ConfVars.METASTORE_INT_ARCHIVED);
@@ -325,6 +327,11 @@ public class DDLTask extends Task<DDLWork> implements Serializable {
       ShowTableStatusDesc showTblStatus = work.getShowTblStatusDesc();
       if (showTblStatus != null) {
         return showTableStatus(db, showTblStatus);
+      }
+
+      ShowTblPropertiesDesc showTblProperties = work.getShowTblPropertiesDesc();
+      if (showTblProperties != null) {
+        return showTableProperties(db, showTblProperties);
       }
 
       ShowFunctionsDesc showFuncs = work.getShowFuncsDesc();
@@ -2355,8 +2362,9 @@ public class DDLTask extends Task<DDLWork> implements Serializable {
                           formatter.MISSING);
       } else {
           Map<String, String> params = null;
-          if(descDatabase.isExt())
-              params = database.getParameters();
+          if(descDatabase.isExt()) {
+            params = database.getParameters();
+          }
 
           formatter.showDatabaseDescription(outStream,
                                             database.getName(),
@@ -2449,6 +2457,75 @@ public class DDLTask extends Task<DDLWork> implements Serializable {
   }
 
   /**
+   * Write the properties of a table to a file.
+   *
+   * @param db
+   *          The database in question.
+   * @param showTblPrpt
+   *          This is the table we're interested in.
+   * @return Returns 0 when execution succeeds and above 0 if it fails.
+   * @throws HiveException
+   *           Throws this exception if an unexpected error occurs.
+   */
+  private int showTableProperties(Hive db, ShowTblPropertiesDesc showTblPrpt) throws HiveException {
+    String tableName = showTblPrpt.getTableName();
+
+    // show table properties - populate the output stream
+    Table tbl = db.getTable(tableName, false);
+    DataOutput outStream = null;
+    try {
+      Path resFile = new Path(showTblPrpt.getResFile());
+      FileSystem fs = resFile.getFileSystem(conf);
+      outStream = fs.create(resFile);
+
+      if (tbl == null) {
+        String errMsg = "Table " + tableName + " does not exist";
+        outStream.write(errMsg.getBytes("UTF-8"));
+        ((FSDataOutputStream) outStream).close();
+        outStream = null;
+        return 0;
+      }
+
+      LOG.info("DDLTask: show properties for " + tbl.getTableName());
+
+      String propertyName = showTblPrpt.getPropertyName();
+      if (propertyName != null) {
+        String propertyValue = tbl.getProperty(propertyName);
+        if (propertyValue == null) {
+          String errMsg = "Table " + tableName + " does not have property: " + propertyName;
+          outStream.write(errMsg.getBytes("UTF-8"));
+        }
+        else {
+          outStream.writeBytes(propertyValue);
+        }
+      }
+      else {
+        Map<String, String> properties = tbl.getParameters();
+        for (String key : properties.keySet()) {
+          writeKeyValuePair(outStream, key, properties.get(key));
+        }
+      }
+
+      LOG.info("DDLTask: written data for showing properties of " + tbl.getTableName());
+      ((FSDataOutputStream) outStream).close();
+      outStream = null;
+
+    } catch (FileNotFoundException e) {
+      LOG.info("show table properties: " + stringifyException(e));
+      return 1;
+    } catch (IOException e) {
+      LOG.info("show table properties: " + stringifyException(e));
+      return 1;
+    } catch (Exception e) {
+      throw new HiveException(e);
+    } finally {
+      IOUtils.closeStream((FSDataOutputStream) outStream);
+    }
+
+    return 0;
+  }
+
+  /**
    * Write the description of a table to a file.
    *
    * @param db
@@ -2513,7 +2590,8 @@ public class DDLTask extends Task<DDLWork> implements Serializable {
 
       List<FieldSchema> cols = null;
       if (colPath.equals(tableName)) {
-        cols = (part == null) ? tbl.getCols() : part.getCols();
+        cols = (part == null || tbl.getTableType() == TableType.VIRTUAL_VIEW) ?
+            tbl.getCols() : part.getCols();
 
         if (!descTbl.isFormatted()) {
           if (tableName.equals(colPath)) {
@@ -3008,11 +3086,19 @@ public class DDLTask extends Task<DDLWork> implements Serializable {
       List<Partition> partsToDelete = new ArrayList<Partition>();
       for (PartitionSpec partSpec : dropTbl.getPartSpecs()) {
         List<Partition> partitions = null;
-        try {
-          partitions = db.getPartitionsByFilter(tbl, partSpec.toString());
-        } catch (Exception e) {
-          throw new HiveException(e);
+        // getPartitionsByFilter only works for string columns.
+        // Till that is fixed, only equality will work for non-string columns.
+        if (dropTbl.isStringPartitionColumns()) {
+          try {
+            partitions = db.getPartitionsByFilter(tbl, partSpec.toString());
+          } catch (Exception e) {
+            throw new HiveException(e);
+          }
         }
+        else {
+          partitions = db.getPartitions(tbl, partSpec.getPartSpecWithoutOperator());
+        }
+
         // this is to prevent dropping archived partition which is archived in a
         // different level the drop command specified.
         int partPrefixToDrop = 0;
@@ -3306,8 +3392,6 @@ public class DDLTask extends Task<DDLWork> implements Serializable {
     if (rc != 0) {
       return rc;
     }
-
-    tbl.setPrimaryRegionName(crtTbl.getPrimaryRegionName());
 
     // create the table
     db.createTable(tbl, crtTbl.getIfNotExists());

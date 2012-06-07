@@ -70,6 +70,7 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
+import org.apache.thrift.transport.TFramedTransport;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
@@ -215,9 +216,11 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
     TTransportException tte = null;
     HadoopShims shim = ShimLoader.getHadoopShims();
     boolean useSasl = conf.getBoolVar(ConfVars.METASTORE_USE_THRIFT_SASL);
+    boolean useFramedTransport = conf.getBoolVar(ConfVars.METASTORE_USE_THRIFT_FRAMED_TRANSPORT);
     transport = new TSocket(store.getHost(), store.getPort());
-    ((TSocket)transport).setTimeout(1000 * conf.getIntVar(ConfVars.
-        METASTORE_CLIENT_SOCKET_TIMEOUT));
+    int clientSocketTimeout = conf.getIntVar(ConfVars.METASTORE_CLIENT_SOCKET_TIMEOUT);
+
+    transport = new TSocket(store.getHost(), store.getPort(), 1000 * clientSocketTimeout);
 
     if (useSasl) {
       // Wrap thrift connection with SASL for secure connection.
@@ -248,6 +251,8 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
         LOG.error("Couldn't create client transport", ioe);
         throw new MetaException(ioe.toString());
       }
+    } else if (useFramedTransport) {
+      transport = new TFramedTransport(transport);
     }
 
     client = new ThriftHiveMetastore.Client(new TBinaryProtocol(transport));
@@ -302,15 +307,17 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
 
   public void close() {
     isConnected = false;
-    if ((transport != null) && transport.isOpen()) {
-      transport.close();
-    }
     try {
       if (null != client) {
         client.shutdown();
       }
     } catch (TException e) {
       LOG.error("Unable to shutdown local metastore client", e);
+    }
+    // Transport would have got closed via client.shutdown(), so we dont need this, but
+    // just in case, we make this call.
+    if ((transport != null) && transport.isOpen()) {
+      transport.close();
     }
   }
 
@@ -450,6 +457,13 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
         throw e;
       }
       return;
+    }
+
+    if (cascade) {
+       List<String> tableList = getAllTables(name);
+       for (String table : tableList) {
+            dropTable(name, table, deleteData, false);
+        }
     }
     client.drop_database(name, deleteData, cascade);
   }
