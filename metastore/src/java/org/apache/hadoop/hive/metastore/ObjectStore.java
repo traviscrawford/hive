@@ -141,6 +141,7 @@ public class ObjectStore implements RawStore, Configurable {
   int openTrasactionCalls = 0;
   private Transaction currentTransaction = null;
   private TXN_STATUS transactionStatus = TXN_STATUS.NO_STATE;
+  private boolean caseSensitive;
 
   public ObjectStore() {
   }
@@ -179,6 +180,13 @@ public class ObjectStore implements RawStore, Configurable {
       openTrasactionCalls = 0;
       currentTransaction = null;
       transactionStatus = TXN_STATUS.NO_STATE;
+      caseSensitive = hiveConf.getBoolean(ConfVars.METASTORE_CASE_SENSITIVE.name(),
+          ConfVars.METASTORE_CASE_SENSITIVE.defaultBoolVal);
+      if (caseSensitive) {
+        LOG.info("Using case sensitive names.");
+      } else {
+        LOG.info("Using case insensitive names.");
+      }
 
       initialize(propsFromConf);
 
@@ -361,7 +369,7 @@ public class ObjectStore implements RawStore, Configurable {
   public void createDatabase(Database db) throws InvalidObjectException, MetaException {
     boolean commited = false;
     MDatabase mdb = new MDatabase();
-    mdb.setName(db.getName().toLowerCase());
+    mdb.setName(maybeToLowerCase(db.getName()));
     mdb.setLocationUri(db.getLocationUri());
     mdb.setDescription(db.getDescription());
     mdb.setParameters(db.getParameters());
@@ -382,7 +390,7 @@ public class ObjectStore implements RawStore, Configurable {
     boolean commited = false;
     try {
       openTransaction();
-      name = name.toLowerCase().trim();
+      name = maybeToLowerCase(name);
       Query query = pm.newQuery(MDatabase.class, "name == dbname");
       query.declareParameters("java.lang.String dbname");
       query.setUnique(true);
@@ -452,7 +460,7 @@ public class ObjectStore implements RawStore, Configurable {
   public boolean dropDatabase(String dbname) throws NoSuchObjectException, MetaException {
     boolean success = false;
     LOG.info("Dropping database " + dbname + " along with all tables");
-    dbname = dbname.toLowerCase();
+    dbname = maybeToLowerCase(dbname);
     try {
       openTransaction();
 
@@ -608,6 +616,7 @@ public class ObjectStore implements RawStore, Configurable {
   }
 
   public void createTable(Table tbl) throws InvalidObjectException, MetaException {
+    LOG.info("travis debug: createTable " + tbl);
     boolean commited = false;
     try {
       openTransaction();
@@ -712,6 +721,7 @@ public class ObjectStore implements RawStore, Configurable {
   }
 
   public Table getTable(String dbName, String tableName) throws MetaException {
+    LOG.info(String.format("travis debug getTable %s.%s", dbName, tableName));
     boolean commited = false;
     Table tbl = null;
     try {
@@ -732,7 +742,7 @@ public class ObjectStore implements RawStore, Configurable {
     List<String> tbls = null;
     try {
       openTransaction();
-      dbName = dbName.toLowerCase().trim();
+      dbName = maybeToLowerCase(dbName);
       // Take the pattern and split it on the | to get all the composing
       // patterns
       String[] subpatterns = pattern.trim().split("\\|");
@@ -777,8 +787,9 @@ public class ObjectStore implements RawStore, Configurable {
     boolean commited = false;
     try {
       openTransaction();
-      db = db.toLowerCase().trim();
-      table = table.toLowerCase().trim();
+      db = maybeToLowerCase(db);
+      table = maybeToLowerCase(table);
+      LOG.info(String.format("travis debug getMTable after maybe: %s.%s", db, table));
       Query query = pm.newQuery(MTable.class, "tableName == table && database.name == db");
       query.declareParameters("java.lang.String table, java.lang.String db");
       query.setUnique(true);
@@ -790,6 +801,7 @@ public class ObjectStore implements RawStore, Configurable {
         rollbackTransaction();
       }
     }
+    LOG.info("travis debug: getMTable " + mtbl);
     return mtbl;
   }
 
@@ -800,7 +812,7 @@ public class ObjectStore implements RawStore, Configurable {
     try {
       openTransaction();
 
-      db = db.toLowerCase().trim();
+      db = maybeToLowerCase(db);
       Query dbExistsQuery = pm.newQuery(MDatabase.class, "name == db");
       dbExistsQuery.declareParameters("java.lang.String db");
       dbExistsQuery.setUnique(true);
@@ -812,7 +824,7 @@ public class ObjectStore implements RawStore, Configurable {
 
       List<String> lowered_tbl_names = new ArrayList<String>();
       for (String t : tbl_names) {
-        lowered_tbl_names.add(t.toLowerCase().trim());
+        lowered_tbl_names.add(maybeToLowerCase(t));
       }
       Query query = pm.newQuery(MTable.class);
       query.setFilter("database.name == db && tbl_names.contains(tableName)");
@@ -883,7 +895,7 @@ public class ObjectStore implements RawStore, Configurable {
     }
 
     // A new table is always created with a new column descriptor
-    return new MTable(tbl.getTableName().toLowerCase(), mdb,
+    return new MTable(maybeToLowerCase(tbl.getTableName()), mdb,
         convertToMStorageDescriptor(tbl.getSd()), tbl.getOwner(), tbl
             .getCreateTime(), tbl.getLastAccessTime(), tbl.getRetention(),
         convertToMFieldSchemas(tbl.getPartitionKeys()), tbl.getParameters(),
@@ -896,7 +908,7 @@ public class ObjectStore implements RawStore, Configurable {
     if (keys != null) {
       mkeys = new ArrayList<MFieldSchema>(keys.size());
       for (FieldSchema part : keys) {
-        mkeys.add(new MFieldSchema(part.getName().toLowerCase(),
+        mkeys.add(new MFieldSchema(maybeToLowerCase(part.getName()),
             part.getType(), part.getComment()));
       }
     }
@@ -920,7 +932,7 @@ public class ObjectStore implements RawStore, Configurable {
     if (keys != null) {
       mkeys = new ArrayList<MOrder>(keys.size());
       for (Order part : keys) {
-        mkeys.add(new MOrder(part.getCol().toLowerCase(), part.getOrder()));
+        mkeys.add(new MOrder(maybeToLowerCase(part.getCol()), part.getOrder()));
       }
     }
     return mkeys;
@@ -1096,8 +1108,8 @@ public class ObjectStore implements RawStore, Configurable {
     boolean commited = false;
     try {
       openTransaction();
-      dbName = dbName.toLowerCase().trim();
-      tableName = tableName.toLowerCase().trim();
+      dbName = maybeToLowerCase(dbName);
+      tableName = maybeToLowerCase(tableName);
       MTable mtbl = getMTable(dbName, tableName);
       if (mtbl == null) {
         commited = commitTransaction();
@@ -1349,8 +1361,8 @@ public class ObjectStore implements RawStore, Configurable {
     try {
       openTransaction();
       LOG.debug("Executing getPartitionNames");
-      dbName = dbName.toLowerCase().trim();
-      tableName = tableName.toLowerCase().trim();
+      dbName = maybeToLowerCase(dbName);
+      tableName = maybeToLowerCase(tableName);
       Query q = pm.newQuery(
           "select partitionName from org.apache.hadoop.hive.metastore.model.MPartition "
           + "where table.database.name == t1 && table.tableName == t2 "
@@ -1392,8 +1404,8 @@ public class ObjectStore implements RawStore, Configurable {
   private Collection getPartitionPsQueryResults(String dbName, String tableName,
       List<String> part_vals, short max_parts, String resultsCol)
       throws MetaException, NoSuchObjectException {
-    dbName = dbName.toLowerCase().trim();
-    tableName = tableName.toLowerCase().trim();
+    dbName = maybeToLowerCase(dbName);
+    tableName = maybeToLowerCase(tableName);
     Table table = getTable(dbName, tableName);
 
     if (table == null) {
@@ -1502,8 +1514,8 @@ public class ObjectStore implements RawStore, Configurable {
     try {
       openTransaction();
       LOG.debug("Executing listMPartitions");
-      dbName = dbName.toLowerCase().trim();
-      tableName = tableName.toLowerCase().trim();
+      dbName = maybeToLowerCase(dbName);
+      tableName = maybeToLowerCase(tableName);
       Query query = pm.newQuery(MPartition.class,
           "table.tableName == t1 && table.database.name == t2");
       query.declareParameters("java.lang.String t1, java.lang.String t2");
@@ -1676,8 +1688,8 @@ public class ObjectStore implements RawStore, Configurable {
     try {
       openTransaction();
       LOG.debug("Executing listMPartitionsByFilter");
-      dbName = dbName.toLowerCase();
-      tableName = tableName.toLowerCase();
+      dbName = maybeToLowerCase(dbName);
+      tableName = maybeToLowerCase(tableName);
 
       MTable mtable = getMTable(dbName, tableName);
       if( mtable == null ) {
@@ -1728,7 +1740,7 @@ public class ObjectStore implements RawStore, Configurable {
     try {
       openTransaction();
       LOG.debug("Executing listTableNamesByFilter");
-      dbName = dbName.toLowerCase().trim();
+      dbName = maybeToLowerCase(dbName);
       Map<String, Object> params = new HashMap<String, Object>();
       String queryFilterString = makeTableQueryFilterString(filter, params);
       Query query = pm.newQuery(MTable.class);
@@ -1774,8 +1786,8 @@ public class ObjectStore implements RawStore, Configurable {
     try {
       openTransaction();
       LOG.debug("Executing listMPartitionNamesByFilter");
-      dbName = dbName.toLowerCase();
-      tableName = tableName.toLowerCase();
+      dbName = maybeToLowerCase(dbName);
+      tableName = maybeToLowerCase(tableName);
 
       MTable mtable = getMTable(dbName, tableName);
       if( mtable == null ) {
@@ -1829,8 +1841,8 @@ public class ObjectStore implements RawStore, Configurable {
     boolean success = false;
     try {
       openTransaction();
-      name = name.toLowerCase();
-      dbname = dbname.toLowerCase();
+      name = maybeToLowerCase(name);
+      dbname = maybeToLowerCase(dbname);
       MTable newt = convertToMTable(newTable);
       if (newt == null) {
         throw new InvalidObjectException("new table is invalid");
@@ -1842,7 +1854,7 @@ public class ObjectStore implements RawStore, Configurable {
       }
 
       // For now only alter name, owner, paramters, cols, bucketcols are allowed
-      oldt.setTableName(newt.getTableName().toLowerCase());
+      oldt.setTableName(maybeToLowerCase(newt.getTableName()));
       oldt.setParameters(newt.getParameters());
       oldt.setOwner(newt.getOwner());
       // Fully copy over the contents of the new SD into the old SD,
@@ -1870,9 +1882,9 @@ public class ObjectStore implements RawStore, Configurable {
     boolean success = false;
     try {
       openTransaction();
-      name = name.toLowerCase();
-      baseTblName = baseTblName.toLowerCase();
-      dbname = dbname.toLowerCase();
+      name = maybeToLowerCase(name);
+      baseTblName = maybeToLowerCase(baseTblName);
+      dbname = maybeToLowerCase(dbname);
       MIndex newi = convertToMIndex(newIndex);
       if (newi == null) {
         throw new InvalidObjectException("new index is invalid");
@@ -1900,8 +1912,8 @@ public class ObjectStore implements RawStore, Configurable {
     boolean success = false;
     try {
       openTransaction();
-      name = name.toLowerCase();
-      dbname = dbname.toLowerCase();
+      name = maybeToLowerCase(name);
+      dbname = maybeToLowerCase(dbname);
       MPartition oldp = getMPartition(dbname, name, part_vals);
       MPartition newp = convertToMPart(newPart, false);
       if (oldp == null || newp == null) {
@@ -2120,8 +2132,8 @@ public class ObjectStore implements RawStore, Configurable {
     boolean commited = false;
     try {
       openTransaction();
-      dbName = dbName.toLowerCase().trim();
-      originalTblName = originalTblName.toLowerCase().trim();
+      dbName = maybeToLowerCase(dbName);
+      originalTblName = maybeToLowerCase(originalTblName);
       MTable mtbl = getMTable(dbName, originalTblName);
       if (mtbl == null) {
         commited = commitTransaction();
@@ -2199,8 +2211,8 @@ public class ObjectStore implements RawStore, Configurable {
     try {
       openTransaction();
       LOG.debug("Executing listMIndexes");
-      dbName = dbName.toLowerCase().trim();
-      origTableName = origTableName.toLowerCase().trim();
+      dbName = maybeToLowerCase(dbName);
+      origTableName = maybeToLowerCase(origTableName);
       Query query = pm.newQuery(MIndex.class,
           "origTable.tableName == t1 && origTable.database.name == t2");
       query.declareParameters("java.lang.String t1, java.lang.String t2");
@@ -2225,8 +2237,8 @@ public class ObjectStore implements RawStore, Configurable {
     try {
       openTransaction();
       LOG.debug("Executing listIndexNames");
-      dbName = dbName.toLowerCase().trim();
-      origTableName = origTableName.toLowerCase().trim();
+      dbName = maybeToLowerCase(dbName);
+      origTableName = maybeToLowerCase(origTableName);
       Query q = pm.newQuery(
           "select indexName from org.apache.hadoop.hive.metastore.model.MIndex "
           + "where origTable.database.name == t1 && origTable.tableName == t2 "
@@ -2576,7 +2588,7 @@ public class ObjectStore implements RawStore, Configurable {
   public List<PrivilegeGrantInfo> getDBPrivilege(String dbName,
       String principalName, PrincipalType principalType)
       throws InvalidObjectException, MetaException {
-    dbName = dbName.toLowerCase().trim();
+    dbName = maybeToLowerCase(dbName);
 
     if (principalName != null) {
       List<MDBPrivilege> userNameDbPriv = this.listPrincipalDBGrants(
@@ -2602,7 +2614,7 @@ public class ObjectStore implements RawStore, Configurable {
       String userName, List<String> groupNames) throws InvalidObjectException,
       MetaException {
     boolean commited = false;
-    dbName = dbName.toLowerCase().trim();
+    dbName = maybeToLowerCase(dbName);
 
     PrincipalPrivilegeSet ret = new PrincipalPrivilegeSet();
     try {
@@ -2646,8 +2658,8 @@ public class ObjectStore implements RawStore, Configurable {
       List<String> groupNames) throws InvalidObjectException, MetaException {
     boolean commited = false;
     PrincipalPrivilegeSet ret = new PrincipalPrivilegeSet();
-    tableName = tableName.toLowerCase().trim();
-    dbName = dbName.toLowerCase().trim();
+    tableName = maybeToLowerCase(tableName);
+    dbName = maybeToLowerCase(dbName);
 
     try {
       openTransaction();
@@ -2690,8 +2702,8 @@ public class ObjectStore implements RawStore, Configurable {
       throws InvalidObjectException, MetaException {
     boolean commited = false;
     PrincipalPrivilegeSet ret = new PrincipalPrivilegeSet();
-    tableName = tableName.toLowerCase().trim();
-    dbName = dbName.toLowerCase().trim();
+    tableName = maybeToLowerCase(tableName);
+    dbName = maybeToLowerCase(dbName);
 
     try {
       openTransaction();
@@ -2733,9 +2745,9 @@ public class ObjectStore implements RawStore, Configurable {
       String tableName, String partitionName, String columnName,
       String userName, List<String> groupNames) throws InvalidObjectException,
       MetaException {
-    tableName = tableName.toLowerCase().trim();
-    dbName = dbName.toLowerCase().trim();
-    columnName = columnName.toLowerCase().trim();
+    tableName = maybeToLowerCase(tableName);
+    dbName = maybeToLowerCase(dbName);
+    columnName = maybeToLowerCase(columnName);
 
     boolean commited = false;
     PrincipalPrivilegeSet ret = new PrincipalPrivilegeSet();
@@ -2778,8 +2790,8 @@ public class ObjectStore implements RawStore, Configurable {
       String tableName, String partName, String principalName,
       PrincipalType principalType) {
 
-    tableName = tableName.toLowerCase().trim();
-    dbName = dbName.toLowerCase().trim();
+    tableName = maybeToLowerCase(tableName);
+    dbName = maybeToLowerCase(dbName);
 
     if (principalName != null) {
       List<MPartitionPrivilege> userNameTabPartPriv = this
@@ -2807,8 +2819,8 @@ public class ObjectStore implements RawStore, Configurable {
 
   private List<PrivilegeGrantInfo> getTablePrivilege(String dbName,
       String tableName, String principalName, PrincipalType principalType) {
-    tableName = tableName.toLowerCase().trim();
-    dbName = dbName.toLowerCase().trim();
+    tableName = maybeToLowerCase(tableName);
+    dbName = maybeToLowerCase(dbName);
 
     if (principalName != null) {
       List<MTablePrivilege> userNameTabPartPriv = this
@@ -2833,9 +2845,9 @@ public class ObjectStore implements RawStore, Configurable {
       String tableName, String columnName, String partitionName,
       String principalName, PrincipalType principalType) {
 
-    tableName = tableName.toLowerCase().trim();
-    dbName = dbName.toLowerCase().trim();
-    columnName = columnName.toLowerCase().trim();
+    tableName = maybeToLowerCase(tableName);
+    dbName = maybeToLowerCase(dbName);
+    columnName = maybeToLowerCase(columnName);
 
     if (partitionName == null) {
       List<MTableColumnPrivilege> userNameColumnPriv = this
@@ -3330,7 +3342,7 @@ public class ObjectStore implements RawStore, Configurable {
       PrincipalType principalType, String dbName) {
     boolean success = false;
     List<MDBPrivilege> mSecurityDBList = null;
-    dbName = dbName.toLowerCase().trim();
+    dbName = maybeToLowerCase(dbName);
 
     try {
       openTransaction();
@@ -3381,11 +3393,11 @@ public class ObjectStore implements RawStore, Configurable {
   public List<MTablePrivilege> listAllTableGrants(String dbName,
       String tableName) {
     boolean success = false;
-    tableName = tableName.toLowerCase().trim();
-    dbName = dbName.toLowerCase().trim();
+    tableName = maybeToLowerCase(tableName);
+    dbName = maybeToLowerCase(dbName);
     List<MTablePrivilege> mSecurityTabList = null;
-    tableName = tableName.toLowerCase().trim();
-    dbName = dbName.toLowerCase().trim();
+    tableName = maybeToLowerCase(tableName);
+    dbName = maybeToLowerCase(dbName);
     try {
       openTransaction();
       LOG.debug("Executing listAllTableGrants");
@@ -3412,8 +3424,8 @@ public class ObjectStore implements RawStore, Configurable {
   @SuppressWarnings("unchecked")
   public List<MPartitionPrivilege> listTableAllPartitionGrants(String dbName,
       String tableName) {
-    tableName = tableName.toLowerCase().trim();
-    dbName = dbName.toLowerCase().trim();
+    tableName = maybeToLowerCase(tableName);
+    dbName = maybeToLowerCase(dbName);
     boolean success = false;
     List<MPartitionPrivilege> mSecurityTabPartList = null;
     try {
@@ -3444,8 +3456,8 @@ public class ObjectStore implements RawStore, Configurable {
       String tableName) {
     boolean success = false;
     List<MTableColumnPrivilege> mTblColPrivilegeList = null;
-    tableName = tableName.toLowerCase().trim();
-    dbName = dbName.toLowerCase().trim();
+    tableName = maybeToLowerCase(tableName);
+    dbName = maybeToLowerCase(dbName);
 
     try {
       openTransaction();
@@ -3471,8 +3483,8 @@ public class ObjectStore implements RawStore, Configurable {
   public List<MPartitionColumnPrivilege> listTableAllPartitionColumnGrants(String dbName,
       String tableName) {
     boolean success = false;
-    tableName = tableName.toLowerCase().trim();
-    dbName = dbName.toLowerCase().trim();
+    tableName = maybeToLowerCase(tableName);
+    dbName = maybeToLowerCase(dbName);
 
     List<MPartitionColumnPrivilege> mSecurityColList = null;
     try {
@@ -3499,8 +3511,8 @@ public class ObjectStore implements RawStore, Configurable {
   public List<MPartitionColumnPrivilege> listPartitionAllColumnGrants(String dbName,
       String tableName, String partName) {
     boolean success = false;
-    tableName = tableName.toLowerCase().trim();
-    dbName = dbName.toLowerCase().trim();
+    tableName = maybeToLowerCase(tableName);
+    dbName = maybeToLowerCase(dbName);
 
     List<MPartitionColumnPrivilege> mSecurityColList = null;
     try {
@@ -3526,7 +3538,7 @@ public class ObjectStore implements RawStore, Configurable {
 
   @SuppressWarnings("unchecked")
   private List<MDBPrivilege> listDatabaseGrants(String dbName) {
-    dbName = dbName.toLowerCase().trim();
+    dbName = maybeToLowerCase(dbName);
 
     boolean success = false;
     try {
@@ -3552,8 +3564,8 @@ public class ObjectStore implements RawStore, Configurable {
   @SuppressWarnings("unchecked")
   private List<MPartitionPrivilege> listPartitionGrants(String dbName, String tableName,
       String partName) {
-    tableName = tableName.toLowerCase().trim();
-    dbName = dbName.toLowerCase().trim();
+    tableName = maybeToLowerCase(tableName);
+    dbName = maybeToLowerCase(dbName);
 
     boolean success = false;
     List<MPartitionPrivilege> mSecurityTabPartList = null;
@@ -3582,8 +3594,8 @@ public class ObjectStore implements RawStore, Configurable {
   public List<MTablePrivilege> listAllTableGrants(
       String principalName, PrincipalType principalType, String dbName,
       String tableName) {
-    tableName = tableName.toLowerCase().trim();
-    dbName = dbName.toLowerCase().trim();
+    tableName = maybeToLowerCase(tableName);
+    dbName = maybeToLowerCase(dbName);
 
     boolean success = false;
     List<MTablePrivilege> mSecurityTabPartList = null;
@@ -3616,8 +3628,8 @@ public class ObjectStore implements RawStore, Configurable {
       String principalName, PrincipalType principalType, String dbName,
       String tableName, String partName) {
     boolean success = false;
-    tableName = tableName.toLowerCase().trim();
-    dbName = dbName.toLowerCase().trim();
+    tableName = maybeToLowerCase(tableName);
+    dbName = maybeToLowerCase(dbName);
 
     List<MPartitionPrivilege> mSecurityTabPartList = null;
     try {
@@ -3651,9 +3663,9 @@ public class ObjectStore implements RawStore, Configurable {
       String principalName, PrincipalType principalType, String dbName,
       String tableName, String columnName) {
     boolean success = false;
-    tableName = tableName.toLowerCase().trim();
-    dbName = dbName.toLowerCase().trim();
-    columnName = columnName.toLowerCase().trim();
+    tableName = maybeToLowerCase(tableName);
+    dbName = maybeToLowerCase(dbName);
+    columnName = maybeToLowerCase(columnName);
     List<MTableColumnPrivilege> mSecurityColList = null;
     try {
       openTransaction();
@@ -3684,9 +3696,9 @@ public class ObjectStore implements RawStore, Configurable {
       String principalName, PrincipalType principalType, String dbName,
       String tableName, String partitionName, String columnName) {
     boolean success = false;
-    tableName = tableName.toLowerCase().trim();
-    dbName = dbName.toLowerCase().trim();
-    columnName = columnName.toLowerCase().trim();
+    tableName = maybeToLowerCase(tableName);
+    dbName = maybeToLowerCase(dbName);
+    columnName = maybeToLowerCase(columnName);
 
     List<MPartitionColumnPrivilege> mSecurityColList = null;
     try {
@@ -3914,5 +3926,15 @@ public class ObjectStore implements RawStore, Configurable {
       LOG.debug("Done executing cleanupEvents");
     }
     return delCnt;
+  }
+
+  /**
+   * Lower case db/table/field names if property set.
+   */
+  private String maybeToLowerCase(String name) {
+    LOG.info("travis debug maybeToLowerCase caseSensitive: " + caseSensitive);
+    String newName = caseSensitive ? name.trim() : name.toLowerCase().trim();
+    LOG.info(String.format("travis debug maybeToLowerCase orig=%s new=%s", name, newName));
+    return newName;
   }
 }

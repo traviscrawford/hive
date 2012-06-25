@@ -123,6 +123,7 @@ public class HiveConf extends Configuration {
       HiveConf.ConfVars.METASTORE_PART_INHERIT_TBL_PROPS,
       HiveConf.ConfVars.METASTORE_BATCH_RETRIEVE_TABLE_PARTITION_MAX,
       HiveConf.ConfVars.METASTORE_PRE_EVENT_LISTENERS,
+      HiveConf.ConfVars.METASTORE_CASE_SENSITIVE,
       };
 
   /**
@@ -299,6 +300,7 @@ public class HiveConf extends Configuration {
     METASTORE_EVENT_CLEAN_FREQ("hive.metastore.event.clean.freq",0L),
     METASTORE_EVENT_EXPIRY_DURATION("hive.metastore.event.expiry.duration",0L),
     METASTORE_EXECUTE_SET_UGI("hive.metastore.execute.setugi", false),
+    METASTORE_CASE_SENSITIVE("hive.metastore.case.sensitive", false),
 
     // Default parameters for creating tables
     NEWTABLEDEFAULTPARA("hive.table.parameters.default", ""),
