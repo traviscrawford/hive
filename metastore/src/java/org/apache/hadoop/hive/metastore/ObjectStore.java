@@ -616,7 +616,6 @@ public class ObjectStore implements RawStore, Configurable {
   }
 
   public void createTable(Table tbl) throws InvalidObjectException, MetaException {
-    LOG.info("travis debug: createTable " + tbl);
     boolean commited = false;
     try {
       openTransaction();
@@ -721,7 +720,6 @@ public class ObjectStore implements RawStore, Configurable {
   }
 
   public Table getTable(String dbName, String tableName) throws MetaException {
-    LOG.info(String.format("travis debug getTable %s.%s", dbName, tableName));
     boolean commited = false;
     Table tbl = null;
     try {
@@ -789,7 +787,6 @@ public class ObjectStore implements RawStore, Configurable {
       openTransaction();
       db = maybeToLowerCase(db);
       table = maybeToLowerCase(table);
-      LOG.info(String.format("travis debug getMTable after maybe: %s.%s", db, table));
       Query query = pm.newQuery(MTable.class, "tableName == table && database.name == db");
       query.declareParameters("java.lang.String table, java.lang.String db");
       query.setUnique(true);
@@ -801,7 +798,6 @@ public class ObjectStore implements RawStore, Configurable {
         rollbackTransaction();
       }
     }
-    LOG.info("travis debug: getMTable " + mtbl);
     return mtbl;
   }
 
@@ -3932,9 +3928,6 @@ public class ObjectStore implements RawStore, Configurable {
    * Lower case db/table/field names if property set.
    */
   private String maybeToLowerCase(String name) {
-    LOG.info("travis debug maybeToLowerCase caseSensitive: " + caseSensitive);
-    String newName = caseSensitive ? name.trim() : name.toLowerCase().trim();
-    LOG.info(String.format("travis debug maybeToLowerCase orig=%s new=%s", name, newName));
-    return newName;
+    return caseSensitive ? name.trim() : name.toLowerCase().trim();
   }
 }
