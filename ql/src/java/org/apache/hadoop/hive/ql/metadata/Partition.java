@@ -505,7 +505,7 @@ public class Partition implements Serializable {
   public List<FieldSchema> getCols() throws HiveException {
     if (SerDeUtils.shouldGetColsFromSerDe(
         tPartition.getSd().getSerdeInfo().getSerializationLib())) {
-      return Hive.getFieldsFromDeserializer(table.getTableName(), deserializer);
+      return Hive.getFieldsFromDeserializer(table.getTableName(), getDeserializer());
     } else {
       return tPartition.getSd().getCols();
     }
