@@ -45,6 +45,7 @@ import org.apache.hadoop.hive.ql.io.HiveFileFormatUtils;
 import org.apache.hadoop.hive.ql.io.HiveOutputFormat;
 import org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat;
 import org.apache.hadoop.hive.serde2.Deserializer;
+import org.apache.hadoop.hive.serde2.SerDeUtils;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -501,8 +502,13 @@ public class Partition implements Serializable {
     return tPartition.getParameters();
   }
 
-  public List<FieldSchema> getCols() {
-    return tPartition.getSd().getCols();
+  public List<FieldSchema> getCols() throws HiveException {
+    if (SerDeUtils.shouldGetColsFromSerDe(
+        tPartition.getSd().getSerdeInfo().getSerializationLib())) {
+      return Hive.getFieldsFromDeserializer(table.getTableName(), deserializer);
+    } else {
+      return tPartition.getSd().getCols();
+    }
   }
 
   public String getLocation() {
