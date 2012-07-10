@@ -601,6 +601,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
   private boolean isJoinToken(ASTNode node) {
     if ((node.getToken().getType() == HiveParser.TOK_JOIN)
+        || (node.getToken().getType() == HiveParser.TOK_CROSSJOIN)
         || (node.getToken().getType() == HiveParser.TOK_LEFTOUTERJOIN)
         || (node.getToken().getType() == HiveParser.TOK_RIGHTOUTERJOIN)
         || (node.getToken().getType() == HiveParser.TOK_FULLOUTERJOIN)
@@ -1683,7 +1684,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     SessionState ss = SessionState.get();
     String progName = getScriptProgName(cmd);
 
-    if (progName.matches("("+ SessionState.getMatchingSchemaAsRegex() +")://.*")) {
+    if (SessionState.canDownloadResource(progName)) {
       String filePath = ss.add_resource(ResourceType.FILE, progName, true);
       if (filePath == null) {
         throw new RuntimeException("Could not download the resource: " + progName);
