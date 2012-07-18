@@ -45,7 +45,15 @@ public class JavaBinaryObjectInspector extends AbstractPrimitiveJavaObjectInspec
 
   @Override
   public BytesWritable getPrimitiveWritableObject(Object o) {
-    return o == null ? null : new BytesWritable(((ByteArrayRef)o).getData());
+    byte[] data;
+    if (o instanceof ByteArrayRef) {
+      data = ((ByteArrayRef) o).getData();
+    } else if (o instanceof byte[]) {
+      data = (byte[]) o;
+    } else {
+      return null;
+    }
+    return new BytesWritable(data);
   }
 
   @Override
