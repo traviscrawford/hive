@@ -2046,7 +2046,8 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
     ASTNode root = (ASTNode) selExpr.getChild(0);
     if (root.getType() == HiveParser.TOK_TABLE_OR_COL) {
-      colAlias = root.getChild(0).getText();
+      colAlias =
+        BaseSemanticAnalyzer.unescapeIdentifier(root.getChild(0).getText());
       colRef[0] = tabAlias;
       colRef[1] = colAlias;
       return colRef;
@@ -5614,6 +5615,11 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       filters.add(node.getFilters().get(i + 1));
     }
 
+    if (node.getFilters().get(0).size() != 0) {
+      ArrayList<ASTNode> filterPos = filters.get(pos);
+      filterPos.addAll(node.getFilters().get(0));
+    }
+
     ArrayList<ArrayList<ASTNode>> filter = target.getFiltersForPushing();
     for (int i = 0; i < nodeRightAliases.length; i++) {
       filter.add(node.getFiltersForPushing().get(i + 1));
@@ -7050,7 +7056,8 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
                 inputs.add(new ReadEntity(part));
               }
 
-              fetch = new FetchWork(listP, partP, qb.getParseInfo()
+              TableDesc table = Utilities.getTableDesc(partsList.getSourceTable());
+              fetch = new FetchWork(listP, partP, table, qb.getParseInfo()
                   .getOuterQueryLimit());
               noMapRed = true;
             }
@@ -7059,18 +7066,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       }
 
       if (noMapRed) {
-        if (fetch.getTblDesc() != null) {
-          PlanUtils.configureInputJobPropertiesForStorageHandler(
-            fetch.getTblDesc());
-        } else if ( (fetch.getPartDesc() != null) && (!fetch.getPartDesc().isEmpty())){
-            PartitionDesc pd0 = fetch.getPartDesc().get(0);
-            TableDesc td = pd0.getTableDesc();
-            if ((td != null)&&(td.getProperties() != null)
-                && td.getProperties().containsKey(
-                    org.apache.hadoop.hive.metastore.api.Constants.META_TABLE_STORAGE)){
-              PlanUtils.configureInputJobPropertiesForStorageHandler(td);
-            }
-        }
+        PlanUtils.configureInputJobPropertiesForStorageHandler(fetch.getTblDesc());
         fetchTask = (FetchTask) TaskFactory.get(fetch, conf);
         setFetchTask(fetchTask);
 
