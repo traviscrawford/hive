@@ -98,6 +98,7 @@ import org.apache.hadoop.hive.ql.plan.PrivilegeObjectDesc;
 import org.apache.hadoop.hive.ql.plan.RenamePartitionDesc;
 import org.apache.hadoop.hive.ql.plan.RevokeDesc;
 import org.apache.hadoop.hive.ql.plan.RoleDDLDesc;
+import org.apache.hadoop.hive.ql.plan.ShowColumnsDesc;
 import org.apache.hadoop.hive.ql.plan.ShowDatabasesDesc;
 import org.apache.hadoop.hive.ql.plan.ShowFunctionsDesc;
 import org.apache.hadoop.hive.ql.plan.ShowGrantDesc;
@@ -228,6 +229,10 @@ public class DDLSemanticAnalyzer extends BaseSemanticAnalyzer {
     case HiveParser.TOK_SHOWTABLES:
       ctx.setResFile(new Path(ctx.getLocalTmpFileURI()));
       analyzeShowTables(ast);
+      break;
+    case HiveParser.TOK_SHOWCOLUMNS:
+      ctx.setResFile(new Path(ctx.getLocalTmpFileURI()));
+      analyzeShowColumns(ast);
       break;
     case HiveParser.TOK_SHOW_TABLESTATUS:
       ctx.setResFile(new Path(ctx.getLocalTmpFileURI()));
@@ -1251,16 +1256,16 @@ public class DDLSemanticAnalyzer extends BaseSemanticAnalyzer {
   private void analyzeAlterTableClusterSort(ASTNode ast)
       throws SemanticException {
     String tableName = getUnescapedName((ASTNode)ast.getChild(0));
+    Table tab = null;
 
     try {
-      Table tab = db.getTable(db.getCurrentDatabase(), tableName, false);
-      if (tab != null) {
-        inputs.add(new ReadEntity(tab));
-        outputs.add(new WriteEntity(tab));
-      }
+      tab = db.getTable(db.getCurrentDatabase(), tableName, true);
     } catch (HiveException e) {
       throw new SemanticException(ErrorMsg.INVALID_TABLE.getMsg(tableName));
     }
+
+    inputs.add(new ReadEntity(tab));
+    outputs.add(new WriteEntity(tab));
 
     if (ast.getChildCount() == 1) {
       // This means that we want to turn off bucketing
@@ -1282,6 +1287,25 @@ public class DDLSemanticAnalyzer extends BaseSemanticAnalyzer {
       if (numBuckets <= 0) {
         throw new SemanticException(ErrorMsg.INVALID_BUCKET_NUMBER.getMsg());
       }
+
+      // If the table is partitioned, the number of buckets cannot be changed
+      // (unless the table is empty).
+      // The hive code uses bucket information from the table, and changing the
+      // number of buckets can lead to wrong results for bucketed join/sampling
+      // etc. This should be fixed as part of HIVE-3283.
+      // Once the above jira is fixed, this error check/message should be removed
+      if (tab.isPartitioned()) {
+        try {
+          List<String> partitionNames = db.getPartitionNames(tableName, (short)1);
+          if ((partitionNames != null) && (!partitionNames.isEmpty())) {
+            throw new
+              SemanticException(ErrorMsg.NUM_BUCKETS_CHANGE_NOT_ALLOWED.getMsg());
+          }
+        } catch (HiveException e) {
+          throw new SemanticException(e.getMessage());
+        }
+      }
+
       AlterTableDesc alterTblDesc = new AlterTableDesc(tableName, numBuckets,
           bucketCols, sortCols);
       rootTasks.add(TaskFactory.get(new DDLWork(getInputs(), getOutputs(),
@@ -1458,6 +1482,41 @@ public class DDLSemanticAnalyzer extends BaseSemanticAnalyzer {
     rootTasks.add(TaskFactory.get(new DDLWork(getInputs(), getOutputs(),
         showTblsDesc), conf));
     setFetchTask(createFetchTask(showTblsDesc.getSchema()));
+  }
+
+  private void analyzeShowColumns(ASTNode ast) throws SemanticException {
+    ShowColumnsDesc showColumnsDesc;
+    String dbName = null;
+    String tableName = null;
+    switch (ast.getChildCount()) {
+      case 1:
+        tableName = getUnescapedName((ASTNode)ast.getChild(0));
+        break;
+      case 2:
+        dbName = getUnescapedName((ASTNode)ast.getChild(0));
+        tableName = getUnescapedName((ASTNode)ast.getChild(1));
+        break;
+      default:
+        break;
+    }
+
+    try {
+      Table tab = null;
+      if (dbName == null) {
+        tab = db.getTable(tableName, true);
+      }
+      else {
+        tab = db.getTable(dbName, tableName, true);
+      }
+      inputs.add(new ReadEntity(tab));
+    } catch (HiveException e) {
+      throw new SemanticException(ErrorMsg.INVALID_TABLE.getMsg(tableName));
+    }
+
+    showColumnsDesc = new ShowColumnsDesc(ctx.getResFile(), dbName, tableName);
+    rootTasks.add(TaskFactory.get(new DDLWork(getInputs(), getOutputs(),
+                                              showColumnsDesc), conf));
+    setFetchTask(createFetchTask(showColumnsDesc.getSchema()));
   }
 
   private void analyzeShowTableStatus(ASTNode ast) throws SemanticException {
