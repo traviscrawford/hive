@@ -24,6 +24,11 @@ import java.util.Map;
  * Class for testing TestReflectionObjectInspector.
  */
 public class MyStruct {
+
+  public enum MyEnum {
+    first, second
+  }
+
   public int myInt;
   public Integer myInteger;
   public String myString;
@@ -31,4 +36,5 @@ public class MyStruct {
   public MyStruct myStruct;
   public List<String> myListString;
   public Map<String, String> myMapStringString;
+  public MyEnum myEnum;
 }
