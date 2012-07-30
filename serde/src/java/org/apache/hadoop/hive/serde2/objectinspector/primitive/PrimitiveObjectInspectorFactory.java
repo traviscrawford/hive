@@ -63,6 +63,8 @@ public final class PrimitiveObjectInspectorFactory {
       new JavaDoubleObjectInspector();
   public static final JavaStringObjectInspector javaStringObjectInspector =
       new JavaStringObjectInspector();
+  public static final JavaEnumObjectInspector javaEnumObjectInspector =
+      new JavaEnumObjectInspector();
   public static final JavaVoidObjectInspector javaVoidObjectInspector =
       new JavaVoidObjectInspector();
   public static final JavaTimestampObjectInspector javaTimestampObjectInspector =
@@ -139,6 +141,8 @@ public final class PrimitiveObjectInspectorFactory {
         javaDoubleObjectInspector);
     cachedPrimitiveJavaInspectorCache.put(PrimitiveCategory.STRING,
         javaStringObjectInspector);
+    cachedPrimitiveJavaInspectorCache.put(PrimitiveCategory.ENUM,
+        javaEnumObjectInspector);
     cachedPrimitiveJavaInspectorCache.put(PrimitiveCategory.VOID,
         javaVoidObjectInspector);
     cachedPrimitiveJavaInspectorCache.put(PrimitiveCategory.TIMESTAMP,
