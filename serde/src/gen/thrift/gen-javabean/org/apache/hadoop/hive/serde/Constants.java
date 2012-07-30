@@ -69,8 +69,6 @@ public class Constants {
 
   public static final String STRING_TYPE_NAME = "string";
 
-  public static final String ENUM_TYPE_NAME = "enum";
-
   public static final String DATE_TYPE_NAME = "date";
 
   public static final String DATETIME_TYPE_NAME = "datetime";
@@ -102,7 +100,6 @@ public class Constants {
     PrimitiveTypes.add("float");
     PrimitiveTypes.add("double");
     PrimitiveTypes.add("string");
-    PrimitiveTypes.add("enum");
     PrimitiveTypes.add("date");
     PrimitiveTypes.add("datetime");
     PrimitiveTypes.add("timestamp");
