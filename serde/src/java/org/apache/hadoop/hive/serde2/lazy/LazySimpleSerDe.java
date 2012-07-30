@@ -211,7 +211,7 @@ public class LazySimpleSerDe implements SerDe {
     // Read the separators: We use 8 levels of separators by default, but we
     // should change this when we allow users to specify more than 10 levels
     // of separators through DDL.
-    serdeParams.separators = new byte[8];
+    serdeParams.separators = new byte[16];
     serdeParams.separators[0] = getByte(tbl.getProperty(Constants.FIELD_DELIM,
         tbl.getProperty(Constants.SERIALIZATION_FORMAT)), DefaultSeparators[0]);
     serdeParams.separators[1] = getByte(tbl
