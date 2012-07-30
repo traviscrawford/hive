@@ -149,8 +149,6 @@ public final class PrimitiveObjectInspectorUtils {
   public static final PrimitiveTypeEntry stringTypeEntry = new PrimitiveTypeEntry(
       PrimitiveCategory.STRING, Constants.STRING_TYPE_NAME, null, String.class,
       Text.class);
-  public static final PrimitiveTypeEntry enumTypeEntry = new PrimitiveTypeEntry(
-      PrimitiveCategory.ENUM, Constants.ENUM_TYPE_NAME, Enum.class, String.class, Text.class);
   public static final PrimitiveTypeEntry booleanTypeEntry = new PrimitiveTypeEntry(
       PrimitiveCategory.BOOLEAN, Constants.BOOLEAN_TYPE_NAME, Boolean.TYPE,
       Boolean.class, BooleanWritable.class);
