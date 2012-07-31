@@ -47,7 +47,7 @@ public class TestReflectionObjectInspectors extends TestCase {
       assertEquals(Category.STRUCT, oi1.getCategory());
       StructObjectInspector soi = (StructObjectInspector) oi1;
       List<? extends StructField> fields = soi.getAllStructFieldRefs();
-      assertEquals(7, fields.size());
+      assertEquals(6, fields.size());
       assertEquals(fields.get(2), soi.getStructFieldRef("myString"));
 
       // null
@@ -65,7 +65,6 @@ public class TestReflectionObjectInspectors extends TestCase {
       a.myListString = Arrays.asList(new String[] {"a", "b", "c"});
       a.myMapStringString = new HashMap<String, String>();
       a.myMapStringString.put("key", "value");
-      a.myEnum = MyStruct.MyEnum.first;
 
       assertEquals(1, soi.getStructFieldData(a, fields.get(0)));
       assertEquals(2, soi.getStructFieldData(a, fields.get(1)));
@@ -74,9 +73,8 @@ public class TestReflectionObjectInspectors extends TestCase {
       assertEquals(a.myListString, soi.getStructFieldData(a, fields.get(4)));
       assertEquals(a.myMapStringString, soi
           .getStructFieldData(a, fields.get(5)));
-      assertEquals(a.myEnum, soi.getStructFieldData(a, fields.get(6)));
       ArrayList<Object> afields = new ArrayList<Object>();
-      for (int i = 0; i < 7; i++) {
+      for (int i = 0; i < 6; i++) {
         afields.add(soi.getStructFieldData(a, fields.get(i)));
       }
       assertEquals(afields, soi.getStructFieldsDataAsList(a));
