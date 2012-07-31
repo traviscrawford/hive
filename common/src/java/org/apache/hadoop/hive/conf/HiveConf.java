@@ -199,12 +199,6 @@ public class HiveConf extends Configuration {
     TASKLOG_DEBUG_TIMEOUT("hive.exec.tasklog.debug.timeout", 20000),
     OUTPUT_FILE_EXTENSION("hive.output.file.extension", null),
 
-    // By default enum types are treated as struct<value:int> as they are classes
-    // with a single int field named value. However, users often refer to Enum
-    // values by their string name. Enabling this option converts enum values
-    // to strings at runtime.
-    CONVERT_ENUM_TO_STRING("hive.data.convert.enum.to.string", false),
-
     // should hive determine whether to run in local mode automatically ?
     LOCALMODEAUTO("hive.exec.mode.local.auto", false),
     // if yes:
