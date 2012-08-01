@@ -1,0 +1,9 @@
+Changes patched into Hive trunk:
+SNAPSHOT indicates a patch was posted to the upstream issue but not yet committed.
+When including such patches here make sure to show which specific patch was used.
+
+SNAPSHOT HIVE-3325 : serde-reported partition cols should not be persisted in metastore
+https://issues.apache.org/jira/secure/attachment/12538571/HIVE-3325_serde_reported_part_cols.1.patch
+
+SNAPSHOT HIVE-3253 : ArrayIndexOutOfBounds exception for deeply nested structs
+https://issues.apache.org/jira/secure/attachment/12538485/HIVE-3253_moar_nesting.1.patch
