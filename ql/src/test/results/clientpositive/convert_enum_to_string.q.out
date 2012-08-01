@@ -1,0 +1,57 @@
+PREHOOK: query: -- Ensure the default behavior displays Enum fields as struct<value:int>
+-- and that enum-to-string conversion can be enabled/disabled.
+
+create table convert_enum_to_string
+  partitioned by (b string)
+  row format serde "org.apache.hadoop.hive.serde2.thrift.ThriftDeserializer"
+    with serdeproperties (
+      "serialization.class"="org.apache.hadoop.hive.serde2.thrift.test.Complex",
+      "serialization.format"="org.apache.thrift.protocol.TBinaryProtocol")
+PREHOOK: type: CREATETABLE
+POSTHOOK: query: -- Ensure the default behavior displays Enum fields as struct<value:int>
+-- and that enum-to-string conversion can be enabled/disabled.
+
+create table convert_enum_to_string
+  partitioned by (b string)
+  row format serde "org.apache.hadoop.hive.serde2.thrift.ThriftDeserializer"
+    with serdeproperties (
+      "serialization.class"="org.apache.hadoop.hive.serde2.thrift.test.Complex",
+      "serialization.format"="org.apache.thrift.protocol.TBinaryProtocol")
+POSTHOOK: type: CREATETABLE
+POSTHOOK: Output: default@convert_enum_to_string
+PREHOOK: query: describe convert_enum_to_string
+PREHOOK: type: DESCTABLE
+POSTHOOK: query: describe convert_enum_to_string
+POSTHOOK: type: DESCTABLE
+aint	int	from deserializer
+astring	string	from deserializer
+lint	array<int>	from deserializer
+lstring	array<string>	from deserializer
+lintstring	array<struct<myint:int,mystring:string,underscore_int:int>>	from deserializer
+mstringstring	map<string,string>	from deserializer
+myenum	struct<value:int>	from deserializer
+b	string	
+PREHOOK: query: describe convert_enum_to_string
+PREHOOK: type: DESCTABLE
+POSTHOOK: query: describe convert_enum_to_string
+POSTHOOK: type: DESCTABLE
+aint	int	from deserializer
+astring	string	from deserializer
+lint	array<int>	from deserializer
+lstring	array<string>	from deserializer
+lintstring	array<struct<myint:int,mystring:string,underscore_int:int>>	from deserializer
+mstringstring	map<string,string>	from deserializer
+myenum	string	from deserializer
+b	string	
+PREHOOK: query: describe convert_enum_to_string
+PREHOOK: type: DESCTABLE
+POSTHOOK: query: describe convert_enum_to_string
+POSTHOOK: type: DESCTABLE
+aint	int	from deserializer
+astring	string	from deserializer
+lint	array<int>	from deserializer
+lstring	array<string>	from deserializer
+lintstring	array<struct<myint:int,mystring:string,underscore_int:int>>	from deserializer
+mstringstring	map<string,string>	from deserializer
+myenum	struct<value:int>	from deserializer
+b	string	

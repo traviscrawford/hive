@@ -211,6 +211,12 @@ public class HiveConf extends Configuration {
     // not specified
     DROPIGNORESNONEXISTENT("hive.exec.drop.ignorenonexistent", true),
 
+    // By default enum types are treated as struct<value:int> as they are classes
+    // with a single int field named value. However, users often refer to Enum
+    // values by their string name. Enabling this option converts enum values
+    // to strings at runtime.
+    CONVERT_ENUM_TO_STRING("hive.data.convert.enum.to.string", false),
+
     // Hadoop Configuration Properties
     // Properties with null values are ignored and exist only for the purpose of giving us
     // a symbolic name to reference in the Hive source code. Properties with non-null
