@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.google.common.collect.Lists;
 import junit.framework.TestCase;
 
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Category;
@@ -46,7 +47,7 @@ public class TestObjectInspectorUtils extends TestCase {
       StructObjectInspector soi = (StructObjectInspector) ObjectInspectorUtils
           .getStandardObjectInspector(oi1);
       List<? extends StructField> fields = soi.getAllStructFieldRefs();
-      assertEquals(6, fields.size());
+      assertEquals(7, fields.size());
       assertEquals(fields.get(0), soi.getStructFieldRef("aint"));
 
       // null
@@ -65,6 +66,7 @@ public class TestObjectInspectorUtils extends TestCase {
       List<IntString> c4 = new ArrayList<IntString>();
       cc.setLintString(c4);
       cc.setMStringString(null);
+      cc.setMyEnum(null);
       // standard object
       Object c = ObjectInspectorUtils.copyToStandardObject(cc, oi1);
 
@@ -74,8 +76,9 @@ public class TestObjectInspectorUtils extends TestCase {
       assertEquals(c3, soi.getStructFieldData(c, fields.get(3)));
       assertEquals(c4, soi.getStructFieldData(c, fields.get(4)));
       assertNull(soi.getStructFieldData(c, fields.get(5)));
+      assertNull(soi.getStructFieldData(c, fields.get(6)));
       ArrayList<Object> cfields = new ArrayList<Object>();
-      for (int i = 0; i < 6; i++) {
+      for (int i = 0; i < 7; i++) {
         cfields.add(soi.getStructFieldData(c, fields.get(i)));
       }
       assertEquals(cfields, soi.getStructFieldsDataAsList(c));
@@ -103,6 +106,9 @@ public class TestObjectInspectorUtils extends TestCase {
           PrimitiveObjectInspectorFactory.javaStringObjectInspector,
           PrimitiveObjectInspectorFactory.javaStringObjectInspector), fields
           .get(5).getFieldObjectInspector());
+      assertEquals(ObjectInspectorFactory.getStandardStructObjectInspector(
+          Lists.newArrayList("value"), new ArrayList<ObjectInspector>()),
+          fields.get(6).getFieldObjectInspector());
     } catch (Throwable e) {
       e.printStackTrace();
       throw e;

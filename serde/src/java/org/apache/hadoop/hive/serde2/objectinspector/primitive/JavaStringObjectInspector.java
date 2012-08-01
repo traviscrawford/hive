@@ -32,12 +32,28 @@ public class JavaStringObjectInspector extends
 
   @Override
   public Text getPrimitiveWritableObject(Object o) {
-    return o == null ? null : new Text(((String) o));
+    if (o == null) {
+      return null;
+    }
+
+    if (Enum.class.isAssignableFrom(o.getClass())) {
+      return new Text(o.toString());
+    } else {
+      return new Text((String) o);
+    }
   }
 
   @Override
   public String getPrimitiveJavaObject(Object o) {
-    return (String) o;
+    if (o == null) {
+      return null;
+    }
+
+    if (Enum.class.isAssignableFrom(o.getClass())) {
+      return o.toString();
+    } else {
+      return (String) o;
+    }
   }
 
   @Override
