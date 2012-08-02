@@ -51,7 +51,7 @@ public class ReflectionStructObjectInspector extends
     }
 
     public String getFieldName() {
-      return field.getName().toLowerCase();
+      return ObjectInspectorUtils.normalizeFieldName(field.getName());
     }
 
     public ObjectInspector getFieldObjectInspector() {
