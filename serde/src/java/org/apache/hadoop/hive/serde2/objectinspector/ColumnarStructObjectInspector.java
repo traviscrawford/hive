@@ -49,7 +49,7 @@ class ColumnarStructObjectInspector extends StructObjectInspector {
     public MyField(int fieldID, String fieldName,
         ObjectInspector fieldObjectInspector) {
       this.fieldID = fieldID;
-      this.fieldName = fieldName.toLowerCase();
+      this.fieldName = ObjectInspectorUtils.normalizeFieldName(fieldName);
       this.fieldObjectInspector = fieldObjectInspector;
     }
 
