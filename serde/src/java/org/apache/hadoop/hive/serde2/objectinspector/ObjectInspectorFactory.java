@@ -22,6 +22,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -172,6 +173,11 @@ public final class ObjectInspectorFactory {
         Enum.class.isAssignableFrom(c)) {
       return PrimitiveObjectInspectorFactory
           .getPrimitiveJavaObjectInspector(PrimitiveObjectInspector.PrimitiveCategory.STRING);
+    }
+
+    if (ByteBuffer.class.isAssignableFrom(c)) {
+      return PrimitiveObjectInspectorFactory
+           .getPrimitiveJavaObjectInspector(PrimitiveObjectInspector.PrimitiveCategory.BINARY);
     }
 
     // Must be struct because List and Map need to be ParameterizedType
