@@ -4,6 +4,9 @@ Changes patched into Hive trunk:
 SNAPSHOT indicates a patch was posted to the upstream issue but not yet committed.
 When including such patches here make sure to show which specific patch was used.
 
+SNAPSHOT ANALYTICS-2894: Patch Hive so that it returns camel case field names for thrift
+http://jira.local.twitter.com/secure/attachment/53755/hive.camelcase.patch
+
 SNAPSHOT ANALYTICS-2886: Add binary-to-bytearray fix in Hive
 http://jira.local.twitter.com/secure/attachment/53521/bytearray_fix.patch
 
