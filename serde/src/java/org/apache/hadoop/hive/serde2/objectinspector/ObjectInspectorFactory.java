@@ -27,7 +27,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
+import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorUtils;
 
@@ -61,6 +63,11 @@ public final class ObjectInspectorFactory {
   };
 
   private static HashMap<Type, ObjectInspector> objectInspectorCache = new HashMap<Type, ObjectInspector>();
+  private static Properties objectInspectionProperties = new Properties();
+
+  public static void setObjectInspectionProperty(String key, String value) {
+      objectInspectionProperties.setProperty(key, value);
+  }
 
   public static ObjectInspector getReflectionObjectInspector(Type t,
       ObjectInspectorOptions options) {
@@ -153,6 +160,15 @@ public final class ObjectInspectorFactory {
       return PrimitiveObjectInspectorFactory
           .getPrimitiveWritableObjectInspector(PrimitiveObjectInspectorUtils
           .getTypeEntryFromPrimitiveWritableClass(c).primitiveCategory);
+    }
+
+    // Enum class?
+    if ( Boolean.parseBoolean(objectInspectionProperties.getProperty(
+            HiveConf.ConfVars.CONVERT_ENUM_TO_STRING.toString(),
+            HiveConf.ConfVars.CONVERT_ENUM_TO_STRING.defaultVal)) &&
+         Enum.class.isAssignableFrom(c)) {
+      return PrimitiveObjectInspectorFactory
+          .getPrimitiveJavaObjectInspector(PrimitiveObjectInspector.PrimitiveCategory.STRING);
     }
 
     // Must be struct because List and Map need to be ParameterizedType
