@@ -41,7 +41,6 @@ public final class StructTypeInfo extends TypeInfo implements Serializable {
 
   private ArrayList<String> allStructFieldNames;
   private ArrayList<TypeInfo> allStructFieldTypeInfos;
-  test
 
   /**
    * For java serialization use only.
