@@ -63,12 +63,7 @@ public class ThriftDeserializer implements Deserializer {
 
       TProtocolFactory tp = TReflectionUtils
           .getProtocolFactoryByName(protoName);
-
-      ObjectInspectorFactory.setObjectInspectionProperty(HiveConf.ConfVars.CONVERT_ENUM_TO_STRING.toString(),
-          job.get(HiveConf.ConfVars.CONVERT_ENUM_TO_STRING.toString(),
-              HiveConf.ConfVars.CONVERT_ENUM_TO_STRING.defaultVal));
-
-      tsd = new ThriftByteStreamTypedSerDe(recordClass, tp, tp);
+      tsd = new ThriftByteStreamTypedSerDe(recordClass, tp, tp, job);
 
     } catch (Exception e) {
       throw new SerDeException(e);

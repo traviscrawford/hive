@@ -37,6 +37,7 @@ import org.apache.thrift.transport.TIOStreamTransport;
  */
 public class ThriftByteStreamTypedSerDe extends ByteStreamTypedSerDe {
 
+  protected Properties objectInspectorProperties = new Properties();
   protected TIOStreamTransport outTransport, inTransport;
   protected TProtocol outProtocol, inProtocol;
 
@@ -55,10 +56,12 @@ public class ThriftByteStreamTypedSerDe extends ByteStreamTypedSerDe {
         "ThriftByteStreamTypedSerDe is still semi-abstract");
   }
 
-  public ThriftByteStreamTypedSerDe(Type objectType,
-      TProtocolFactory inFactory, TProtocolFactory outFactory)
-      throws SerDeException {
+  public ThriftByteStreamTypedSerDe(Type objectType, TProtocolFactory inFactory,
+      TProtocolFactory outFactory, Configuration conf) throws SerDeException {
     super(objectType);
+    objectInspectorProperties.setProperty(HiveConf.ConfVars.CONVERT_ENUM_TO_STRING.toString(),
+        conf.get(HiveConf.ConfVars.CONVERT_ENUM_TO_STRING.toString(),
+            HiveConf.ConfVars.CONVERT_ENUM_TO_STRING.defaultVal));
     try {
       init(inFactory, outFactory);
     } catch (Exception e) {
@@ -74,7 +77,7 @@ public class ThriftByteStreamTypedSerDe extends ByteStreamTypedSerDe {
   @Override
   public ObjectInspector getObjectInspector() throws SerDeException {
     return ObjectInspectorFactory.getReflectionObjectInspector(objectType,
-        getObjectInspectorOptions());
+        getObjectInspectorOptions(), objectInspectorProperties);
   }
 
   @Override
