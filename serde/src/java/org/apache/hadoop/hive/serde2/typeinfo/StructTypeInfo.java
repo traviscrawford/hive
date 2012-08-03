@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.hadoop.hive.serde.Constants;
+import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorUtils;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Category;
 
 /**
@@ -40,6 +41,7 @@ public final class StructTypeInfo extends TypeInfo implements Serializable {
 
   private ArrayList<String> allStructFieldNames;
   private ArrayList<TypeInfo> allStructFieldTypeInfos;
+  test
 
   /**
    * For java serialization use only.
@@ -100,14 +102,14 @@ public final class StructTypeInfo extends TypeInfo implements Serializable {
   }
 
   public TypeInfo getStructFieldTypeInfo(String field) {
-    String fieldLowerCase = field.toLowerCase();
+    String fieldName = ObjectInspectorUtils.normalizeFieldName(field);
     for (int i = 0; i < allStructFieldNames.size(); i++) {
-      if (fieldLowerCase.equals(allStructFieldNames.get(i))) {
+      if (fieldName.equals(allStructFieldNames.get(i))) {
         return allStructFieldTypeInfos.get(i);
       }
     }
     throw new RuntimeException("cannot find field " + field
-        + "(lowercase form: " + fieldLowerCase + ") in " + allStructFieldNames);
+        + "(normalized form: " + fieldName + ") in " + allStructFieldNames);
     // return null;
   }
 
