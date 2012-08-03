@@ -217,21 +217,21 @@
                     <void property="counterNames"> 
                      <object class="java.util.ArrayList"> 
                       <void method="add"> 
-                       <string>CNTR_NAME_FS_3_NUM_INPUT_ROWS</string> 
+                       <string>CNTR_NAME_FS_310_NUM_INPUT_ROWS</string> 
                       </void> 
                       <void method="add"> 
-                       <string>CNTR_NAME_FS_3_NUM_OUTPUT_ROWS</string> 
+                       <string>CNTR_NAME_FS_310_NUM_OUTPUT_ROWS</string> 
                       </void> 
                       <void method="add"> 
-                       <string>CNTR_NAME_FS_3_TIME_TAKEN</string> 
+                       <string>CNTR_NAME_FS_310_TIME_TAKEN</string> 
                       </void> 
                       <void method="add"> 
-                       <string>CNTR_NAME_FS_3_FATAL_ERROR</string> 
+                       <string>CNTR_NAME_FS_310_FATAL_ERROR</string> 
                       </void> 
                      </object> 
                     </void> 
                     <void property="operatorId"> 
-                     <string>FS_3</string> 
+                     <string>FS_310</string> 
                     </void> 
                     <void property="parentOperators"> 
                      <object class="java.util.ArrayList"> 
@@ -462,21 +462,21 @@
                 <void property="counterNames"> 
                  <object class="java.util.ArrayList"> 
                   <void method="add"> 
-                   <string>CNTR_NAME_SEL_2_NUM_INPUT_ROWS</string> 
+                   <string>CNTR_NAME_SEL_309_NUM_INPUT_ROWS</string> 
                   </void> 
                   <void method="add"> 
-                   <string>CNTR_NAME_SEL_2_NUM_OUTPUT_ROWS</string> 
+                   <string>CNTR_NAME_SEL_309_NUM_OUTPUT_ROWS</string> 
                   </void> 
                   <void method="add"> 
-                   <string>CNTR_NAME_SEL_2_TIME_TAKEN</string> 
+                   <string>CNTR_NAME_SEL_309_TIME_TAKEN</string> 
                   </void> 
                   <void method="add"> 
-                   <string>CNTR_NAME_SEL_2_FATAL_ERROR</string> 
+                   <string>CNTR_NAME_SEL_309_FATAL_ERROR</string> 
                   </void> 
                  </object> 
                 </void> 
                 <void property="operatorId"> 
-                 <string>SEL_2</string> 
+                 <string>SEL_309</string> 
                 </void> 
                 <void property="parentOperators"> 
                  <object class="java.util.ArrayList"> 
@@ -629,21 +629,21 @@
             <void property="counterNames"> 
              <object class="java.util.ArrayList"> 
               <void method="add"> 
-               <string>CNTR_NAME_FIL_4_NUM_INPUT_ROWS</string> 
+               <string>CNTR_NAME_FIL_311_NUM_INPUT_ROWS</string> 
               </void> 
               <void method="add"> 
-               <string>CNTR_NAME_FIL_4_NUM_OUTPUT_ROWS</string> 
+               <string>CNTR_NAME_FIL_311_NUM_OUTPUT_ROWS</string> 
               </void> 
               <void method="add"> 
-               <string>CNTR_NAME_FIL_4_TIME_TAKEN</string> 
+               <string>CNTR_NAME_FIL_311_TIME_TAKEN</string> 
               </void> 
               <void method="add"> 
-               <string>CNTR_NAME_FIL_4_FATAL_ERROR</string> 
+               <string>CNTR_NAME_FIL_311_FATAL_ERROR</string> 
               </void> 
              </object> 
             </void> 
             <void property="operatorId"> 
-             <string>FIL_4</string> 
+             <string>FIL_311</string> 
             </void> 
             <void property="parentOperators"> 
              <object class="java.util.ArrayList"> 
@@ -740,34 +740,6 @@
                 </void> 
                 <void method="add"> 
                  <object class="org.apache.hadoop.hive.ql.exec.ColumnInfo"> 
-                  <void property="internalName"> 
-                   <string>myenum</string> 
-                  </void> 
-                  <void property="tabAlias"> 
-                   <string>src_thrift</string> 
-                  </void> 
-                  <void property="type"> 
-                   <object class="org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo"> 
-                    <void property="allStructFieldNames"> 
-                     <object class="java.util.ArrayList"> 
-                      <void method="add"> 
-                       <string>value</string> 
-                      </void> 
-                     </object> 
-                    </void> 
-                    <void property="allStructFieldTypeInfos"> 
-                     <object class="java.util.ArrayList"> 
-                      <void method="add"> 
-                       <object idref="PrimitiveTypeInfo0"/> 
-                      </void> 
-                     </object> 
-                    </void> 
-                   </object> 
-                  </void> 
-                 </object> 
-                </void> 
-                <void method="add"> 
-                 <object class="org.apache.hadoop.hive.ql.exec.ColumnInfo"> 
                   <void property="hiddenVirtualCol"> 
                    <boolean>true</boolean> 
                   </void> 
@@ -823,16 +795,16 @@
         <void property="counterNames"> 
          <object class="java.util.ArrayList"> 
           <void method="add"> 
-           <string>CNTR_NAME_TS_0_NUM_INPUT_ROWS</string> 
+           <string>CNTR_NAME_TS_307_NUM_INPUT_ROWS</string> 
           </void> 
           <void method="add"> 
-           <string>CNTR_NAME_TS_0_NUM_OUTPUT_ROWS</string> 
+           <string>CNTR_NAME_TS_307_NUM_OUTPUT_ROWS</string> 
           </void> 
           <void method="add"> 
-           <string>CNTR_NAME_TS_0_TIME_TAKEN</string> 
+           <string>CNTR_NAME_TS_307_TIME_TAKEN</string> 
           </void> 
           <void method="add"> 
-           <string>CNTR_NAME_TS_0_FATAL_ERROR</string> 
+           <string>CNTR_NAME_TS_307_FATAL_ERROR</string> 
           </void> 
          </object> 
         </void> 
@@ -850,7 +822,7 @@
          </object> 
         </void> 
         <void property="operatorId"> 
-         <string>TS_0</string> 
+         <string>TS_307</string> 
         </void> 
         <void property="schema"> 
          <object class="org.apache.hadoop.hive.ql.exec.RowSchema"> 

@@ -27,7 +27,6 @@ import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Category;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.thrift.test.Complex;
 import org.apache.hadoop.hive.serde2.thrift.test.IntString;
-import org.apache.hadoop.hive.serde2.thrift.test.MyEnum;
 
 /**
  * TestThriftObjectInspectors.
@@ -50,7 +49,7 @@ public class TestThriftObjectInspectors extends TestCase {
       assertEquals(Category.STRUCT, oi1.getCategory());
       StructObjectInspector soi = (StructObjectInspector) oi1;
       List<? extends StructField> fields = soi.getAllStructFieldRefs();
-      assertEquals(7, fields.size());
+      assertEquals(6, fields.size());
       assertEquals(fields.get(0), soi.getStructFieldRef("aint"));
 
       // null
@@ -69,7 +68,6 @@ public class TestThriftObjectInspectors extends TestCase {
       List<IntString> c4 = new ArrayList<IntString>();
       c.setLintString(c4);
       c.setMStringString(null);
-      c.setMyEnum(MyEnum.ALPACA);
 
       assertEquals(1, soi.getStructFieldData(c, fields.get(0)));
       assertEquals("test", soi.getStructFieldData(c, fields.get(1)));
@@ -77,9 +75,8 @@ public class TestThriftObjectInspectors extends TestCase {
       assertEquals(c3, soi.getStructFieldData(c, fields.get(3)));
       assertEquals(c4, soi.getStructFieldData(c, fields.get(4)));
       assertNull(soi.getStructFieldData(c, fields.get(5)));
-      assertEquals(MyEnum.ALPACA, soi.getStructFieldData(c, fields.get(6)));
       ArrayList<Object> cfields = new ArrayList<Object>();
-      for (int i = 0; i < 7; i++) {
+      for (int i = 0; i < 6; i++) {
         cfields.add(soi.getStructFieldData(c, fields.get(i)));
       }
       assertEquals(cfields, soi.getStructFieldsDataAsList(c));
@@ -107,8 +104,6 @@ public class TestThriftObjectInspectors extends TestCase {
           PrimitiveObjectInspectorFactory.javaStringObjectInspector,
           PrimitiveObjectInspectorFactory.javaStringObjectInspector), fields
           .get(5).getFieldObjectInspector());
-      ObjectInspectorFactory.getReflectionObjectInspector(
-          Complex.class, ObjectInspectorFactory.ObjectInspectorOptions.THRIFT);
     } catch (Throwable e) {
       e.printStackTrace();
       throw e;

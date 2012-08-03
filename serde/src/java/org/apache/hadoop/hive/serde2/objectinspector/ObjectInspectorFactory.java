@@ -22,16 +22,12 @@ import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
-import org.apache.commons.collections.keyvalue.MultiKey;
-import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorUtils;
 
@@ -64,20 +60,14 @@ public final class ObjectInspectorFactory {
     JAVA, THRIFT, PROTOCOL_BUFFERS
   };
 
-  private static HashMap<MultiKey, ObjectInspector> objectInspectorCache =
-      new HashMap<MultiKey, ObjectInspector>();
+  private static HashMap<Type, ObjectInspector> objectInspectorCache = new HashMap<Type, ObjectInspector>();
 
   public static ObjectInspector getReflectionObjectInspector(Type t,
       ObjectInspectorOptions options) {
-    return getReflectionObjectInspector(t, options, null);
-  }
-
-  public static ObjectInspector getReflectionObjectInspector(Type t,
-      ObjectInspectorOptions options, Properties properties) {
-    ObjectInspector oi = objectInspectorCache.get(new MultiKey(t, properties));
+    ObjectInspector oi = objectInspectorCache.get(t);
     if (oi == null) {
-      oi = getReflectionObjectInspectorNoCache(t, options, properties);
-      objectInspectorCache.put(new MultiKey(t, properties), oi);
+      oi = getReflectionObjectInspectorNoCache(t, options);
+      objectInspectorCache.put(t, oi);
     }
     verifyObjectInspector(options, oi, ObjectInspectorOptions.JAVA, new Class[]{ThriftStructObjectInspector.class,
       ProtocolBuffersStructObjectInspector.class});
@@ -111,7 +101,7 @@ public final class ObjectInspectorFactory {
   }
 
   private static ObjectInspector getReflectionObjectInspectorNoCache(Type t,
-      ObjectInspectorOptions options, Properties properties) {
+      ObjectInspectorOptions options) {
     if (t instanceof GenericArrayType) {
       GenericArrayType at = (GenericArrayType) t;
       return getStandardListObjectInspector(getReflectionObjectInspector(at
@@ -165,21 +155,6 @@ public final class ObjectInspectorFactory {
           .getTypeEntryFromPrimitiveWritableClass(c).primitiveCategory);
     }
 
-    // Enum class?
-    if (properties != null &&
-        Boolean.parseBoolean(properties.getProperty(
-            HiveConf.ConfVars.CONVERT_ENUM_TO_STRING.toString(),
-            HiveConf.ConfVars.CONVERT_ENUM_TO_STRING.defaultVal)) &&
-        Enum.class.isAssignableFrom(c)) {
-      return PrimitiveObjectInspectorFactory
-          .getPrimitiveJavaObjectInspector(PrimitiveObjectInspector.PrimitiveCategory.STRING);
-    }
-
-    if (ByteBuffer.class.isAssignableFrom(c)) {
-      return PrimitiveObjectInspectorFactory
-           .getPrimitiveJavaObjectInspector(PrimitiveObjectInspector.PrimitiveCategory.BINARY);
-    }
-
     // Must be struct because List and Map need to be ParameterizedType
     assert (!List.class.isAssignableFrom(c));
     assert (!Map.class.isAssignableFrom(c));
@@ -202,14 +177,14 @@ public final class ObjectInspectorFactory {
     }
     // put it into the cache BEFORE it is initialized to make sure we can catch
     // recursive types.
-    objectInspectorCache.put(new MultiKey(t, properties), oi);
+    objectInspectorCache.put(t, oi);
     Field[] fields = ObjectInspectorUtils.getDeclaredNonStaticFields(c);
     ArrayList<ObjectInspector> structFieldObjectInspectors = new ArrayList<ObjectInspector>(
         fields.length);
     for (int i = 0; i < fields.length; i++) {
       if (!oi.shouldIgnoreField(fields[i].getName())) {
         structFieldObjectInspectors.add(getReflectionObjectInspector(fields[i]
-            .getGenericType(), options, properties));
+            .getGenericType(), options));
       }
     }
     oi.init(c, structFieldObjectInspectors);

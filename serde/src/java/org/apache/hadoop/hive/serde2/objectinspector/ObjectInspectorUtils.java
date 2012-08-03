@@ -75,11 +75,6 @@ public final class ObjectInspectorUtils {
     DEFAULT, JAVA, WRITABLE
   }
 
-  public static String normalizeFieldName(String fieldName) {
-    //todo: make it configurable
-    boolean useLowerCaseFieldNames = false;
-    return useLowerCaseFieldNames ? fieldName.toLowerCase() : fieldName;
-  }
   /**
    * Ensures that an ObjectInspector is Writable.
    */
@@ -332,7 +327,7 @@ public final class ObjectInspectorUtils {
 
   public static StructField getStandardStructFieldRef(String fieldName,
       List<? extends StructField> fields) {
-    fieldName = normalizeFieldName(fieldName);
+    fieldName = fieldName.toLowerCase();
     for (int i = 0; i < fields.size(); i++) {
       if (fields.get(i).getFieldName().equals(fieldName)) {
         return fields.get(i);

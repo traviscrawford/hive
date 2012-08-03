@@ -1,6 +1,5 @@
 package org.apache.hadoop.hive.serde2.objectinspector.primitive;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import org.apache.hadoop.hive.serde2.lazy.LazyUtils;
@@ -36,7 +35,7 @@ public class JavaBinaryObjectInspector extends AbstractPrimitiveJavaObjectInspec
     if (null == o){
       return null;
     }
-    byte[] incoming = getRealBytes(o);
+    byte[] incoming = (byte[])o;
     byte[] outgoing = new byte[incoming.length];
     System.arraycopy(incoming, 0, outgoing, 0, incoming.length);
     return outgoing;
@@ -44,15 +43,12 @@ public class JavaBinaryObjectInspector extends AbstractPrimitiveJavaObjectInspec
 
   @Override
   public BytesWritable getPrimitiveWritableObject(Object o) {
-    if (null == o){
-      return null;
-    }
-    return new BytesWritable(getRealBytes(o));
+    return o == null ? null : new BytesWritable((byte[])o);
   }
 
   @Override
   public byte[] getPrimitiveJavaObject(Object o) {
-    return o == null ? null : getRealBytes(o);
+    return (byte[])o;
   }
 
   /*
@@ -87,11 +83,4 @@ public class JavaBinaryObjectInspector extends AbstractPrimitiveJavaObjectInspec
     return bw == null ? null : LazyUtils.createByteArray(bw);
   }
 
-  private byte[] getRealBytes(Object o) {
-    if (ByteBuffer.class.isAssignableFrom(o.getClass())) {
-      return ((ByteBuffer)o).array();
-    } else {
-      return (byte[])o;
-    }
-  }
 }

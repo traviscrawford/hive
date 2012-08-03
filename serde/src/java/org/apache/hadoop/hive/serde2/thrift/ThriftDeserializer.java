@@ -61,7 +61,7 @@ public class ThriftDeserializer implements Deserializer {
 
       TProtocolFactory tp = TReflectionUtils
           .getProtocolFactoryByName(protoName);
-      tsd = new ThriftByteStreamTypedSerDe(recordClass, tp, tp, job);
+      tsd = new ThriftByteStreamTypedSerDe(recordClass, tp, tp);
 
     } catch (Exception e) {
       throw new SerDeException(e);

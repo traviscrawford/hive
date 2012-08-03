@@ -29,7 +29,6 @@ public class Complex implements org.apache.thrift.TBase<Complex, Complex._Fields
   private static final org.apache.thrift.protocol.TField L_STRING_FIELD_DESC = new org.apache.thrift.protocol.TField("lString", org.apache.thrift.protocol.TType.LIST, (short)4);
   private static final org.apache.thrift.protocol.TField LINT_STRING_FIELD_DESC = new org.apache.thrift.protocol.TField("lintString", org.apache.thrift.protocol.TType.LIST, (short)5);
   private static final org.apache.thrift.protocol.TField M_STRING_STRING_FIELD_DESC = new org.apache.thrift.protocol.TField("mStringString", org.apache.thrift.protocol.TType.MAP, (short)6);
-  private static final org.apache.thrift.protocol.TField MY_ENUM_FIELD_DESC = new org.apache.thrift.protocol.TField("myEnum", org.apache.thrift.protocol.TType.I32, (short)7);
 
   private int aint; // required
   private String aString; // required
@@ -37,7 +36,6 @@ public class Complex implements org.apache.thrift.TBase<Complex, Complex._Fields
   private List<String> lString; // required
   private List<IntString> lintString; // required
   private Map<String,String> mStringString; // required
-  private MyEnum myEnum; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -46,12 +44,7 @@ public class Complex implements org.apache.thrift.TBase<Complex, Complex._Fields
     LINT((short)3, "lint"),
     L_STRING((short)4, "lString"),
     LINT_STRING((short)5, "lintString"),
-    M_STRING_STRING((short)6, "mStringString"),
-    /**
-     * 
-     * @see MyEnum
-     */
-    MY_ENUM((short)7, "myEnum");
+    M_STRING_STRING((short)6, "mStringString");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -78,8 +71,6 @@ public class Complex implements org.apache.thrift.TBase<Complex, Complex._Fields
           return LINT_STRING;
         case 6: // M_STRING_STRING
           return M_STRING_STRING;
-        case 7: // MY_ENUM
-          return MY_ENUM;
         default:
           return null;
       }
@@ -143,8 +134,6 @@ public class Complex implements org.apache.thrift.TBase<Complex, Complex._Fields
         new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
             new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING), 
             new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING))));
-    tmpMap.put(_Fields.MY_ENUM, new org.apache.thrift.meta_data.FieldMetaData("myEnum", org.apache.thrift.TFieldRequirementType.DEFAULT, 
-        new org.apache.thrift.meta_data.EnumMetaData(org.apache.thrift.protocol.TType.ENUM, MyEnum.class)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(Complex.class, metaDataMap);
   }
@@ -158,8 +147,7 @@ public class Complex implements org.apache.thrift.TBase<Complex, Complex._Fields
     List<Integer> lint,
     List<String> lString,
     List<IntString> lintString,
-    Map<String,String> mStringString,
-    MyEnum myEnum)
+    Map<String,String> mStringString)
   {
     this();
     this.aint = aint;
@@ -169,7 +157,6 @@ public class Complex implements org.apache.thrift.TBase<Complex, Complex._Fields
     this.lString = lString;
     this.lintString = lintString;
     this.mStringString = mStringString;
-    this.myEnum = myEnum;
   }
 
   /**
@@ -218,9 +205,6 @@ public class Complex implements org.apache.thrift.TBase<Complex, Complex._Fields
       }
       this.mStringString = __this__mStringString;
     }
-    if (other.isSetMyEnum()) {
-      this.myEnum = other.myEnum;
-    }
   }
 
   public Complex deepCopy() {
@@ -236,7 +220,6 @@ public class Complex implements org.apache.thrift.TBase<Complex, Complex._Fields
     this.lString = null;
     this.lintString = null;
     this.mStringString = null;
-    this.myEnum = null;
   }
 
   public int getAint() {
@@ -432,37 +415,6 @@ public class Complex implements org.apache.thrift.TBase<Complex, Complex._Fields
     }
   }
 
-  /**
-   * 
-   * @see MyEnum
-   */
-  public MyEnum getMyEnum() {
-    return this.myEnum;
-  }
-
-  /**
-   * 
-   * @see MyEnum
-   */
-  public void setMyEnum(MyEnum myEnum) {
-    this.myEnum = myEnum;
-  }
-
-  public void unsetMyEnum() {
-    this.myEnum = null;
-  }
-
-  /** Returns true if field myEnum is set (has been assigned a value) and false otherwise */
-  public boolean isSetMyEnum() {
-    return this.myEnum != null;
-  }
-
-  public void setMyEnumIsSet(boolean value) {
-    if (!value) {
-      this.myEnum = null;
-    }
-  }
-
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case AINT:
@@ -513,14 +465,6 @@ public class Complex implements org.apache.thrift.TBase<Complex, Complex._Fields
       }
       break;
 
-    case MY_ENUM:
-      if (value == null) {
-        unsetMyEnum();
-      } else {
-        setMyEnum((MyEnum)value);
-      }
-      break;
-
     }
   }
 
@@ -543,9 +487,6 @@ public class Complex implements org.apache.thrift.TBase<Complex, Complex._Fields
 
     case M_STRING_STRING:
       return getMStringString();
-
-    case MY_ENUM:
-      return getMyEnum();
 
     }
     throw new IllegalStateException();
@@ -570,8 +511,6 @@ public class Complex implements org.apache.thrift.TBase<Complex, Complex._Fields
       return isSetLintString();
     case M_STRING_STRING:
       return isSetMStringString();
-    case MY_ENUM:
-      return isSetMyEnum();
     }
     throw new IllegalStateException();
   }
@@ -640,15 +579,6 @@ public class Complex implements org.apache.thrift.TBase<Complex, Complex._Fields
       if (!(this_present_mStringString && that_present_mStringString))
         return false;
       if (!this.mStringString.equals(that.mStringString))
-        return false;
-    }
-
-    boolean this_present_myEnum = true && this.isSetMyEnum();
-    boolean that_present_myEnum = true && that.isSetMyEnum();
-    if (this_present_myEnum || that_present_myEnum) {
-      if (!(this_present_myEnum && that_present_myEnum))
-        return false;
-      if (!this.myEnum.equals(that.myEnum))
         return false;
     }
 
@@ -724,16 +654,6 @@ public class Complex implements org.apache.thrift.TBase<Complex, Complex._Fields
     }
     if (isSetMStringString()) {
       lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.mStringString, typedOther.mStringString);
-      if (lastComparison != 0) {
-        return lastComparison;
-      }
-    }
-    lastComparison = Boolean.valueOf(isSetMyEnum()).compareTo(typedOther.isSetMyEnum());
-    if (lastComparison != 0) {
-      return lastComparison;
-    }
-    if (isSetMyEnum()) {
-      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.myEnum, typedOther.myEnum);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -841,13 +761,6 @@ public class Complex implements org.apache.thrift.TBase<Complex, Complex._Fields
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
-        case 7: // MY_ENUM
-          if (field.type == org.apache.thrift.protocol.TType.I32) {
-            this.myEnum = MyEnum.findByValue(iprot.readI32());
-          } else { 
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
-          }
-          break;
         default:
           org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
       }
@@ -918,11 +831,6 @@ public class Complex implements org.apache.thrift.TBase<Complex, Complex._Fields
       }
       oprot.writeFieldEnd();
     }
-    if (this.myEnum != null) {
-      oprot.writeFieldBegin(MY_ENUM_FIELD_DESC);
-      oprot.writeI32(this.myEnum.getValue());
-      oprot.writeFieldEnd();
-    }
     oprot.writeFieldStop();
     oprot.writeStructEnd();
   }
@@ -973,14 +881,6 @@ public class Complex implements org.apache.thrift.TBase<Complex, Complex._Fields
       sb.append("null");
     } else {
       sb.append(this.mStringString);
-    }
-    first = false;
-    if (!first) sb.append(", ");
-    sb.append("myEnum:");
-    if (this.myEnum == null) {
-      sb.append("null");
-    } else {
-      sb.append(this.myEnum);
     }
     first = false;
     sb.append(")");
