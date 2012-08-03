@@ -28,7 +28,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.serde2.ByteStream;
 import org.apache.hadoop.hive.serde2.thrift.test.Complex;
 import org.apache.hadoop.hive.serde2.thrift.test.IntString;
-import org.apache.hadoop.hive.serde2.thrift.test.MyEnum;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
@@ -128,15 +127,14 @@ public final class CreateSequenceFile {
       hash.put("key_" + i, "value_" + i);
 
       Complex complex = new Complex(rand.nextInt(), "record_"
-          + (new Integer(i)).toString(), alist, slist, islist, hash,
-          MyEnum.findByValue(rand.nextInt(MyEnum.values().length) + 1 ));
+          + (new Integer(i)).toString(), alist, slist, islist, hash);
 
       Writable value = serializer.serialize(complex);
       writer.append(key, value);
     }
 
     // Add an all-null record
-    Complex complex = new Complex(0, null, null, null, null, null, null);
+    Complex complex = new Complex(0, null, null, null, null, null);
     Writable value = serializer.serialize(complex);
     writer.append(key, value);
 
