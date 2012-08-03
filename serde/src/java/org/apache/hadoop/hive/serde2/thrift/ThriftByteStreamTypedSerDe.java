@@ -72,6 +72,12 @@ public class ThriftByteStreamTypedSerDe extends ByteStreamTypedSerDe {
   }
 
   @Override
+  public ObjectInspector getObjectInspector() throws SerDeException {
+    return ObjectInspectorFactory.getReflectionObjectInspector(objectType,
+        getObjectInspectorOptions());
+  }
+
+  @Override
   public Object deserialize(Writable field) throws SerDeException {
     Object obj = super.deserialize(field);
     try {
