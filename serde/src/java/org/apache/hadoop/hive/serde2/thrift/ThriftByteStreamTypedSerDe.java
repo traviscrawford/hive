@@ -22,10 +22,8 @@ import java.lang.reflect.Type;
 import java.util.Properties;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.serde2.ByteStreamTypedSerDe;
 import org.apache.hadoop.hive.serde2.SerDeException;
-import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.thrift.TBase;
@@ -39,7 +37,6 @@ import org.apache.thrift.transport.TIOStreamTransport;
  */
 public class ThriftByteStreamTypedSerDe extends ByteStreamTypedSerDe {
 
-  protected Properties objectInspectorProperties = new Properties();
   protected TIOStreamTransport outTransport, inTransport;
   protected TProtocol outProtocol, inProtocol;
 
@@ -59,12 +56,9 @@ public class ThriftByteStreamTypedSerDe extends ByteStreamTypedSerDe {
   }
 
   public ThriftByteStreamTypedSerDe(Type objectType,
-      TProtocolFactory inFactory, TProtocolFactory outFactory, Configuration conf)
+      TProtocolFactory inFactory, TProtocolFactory outFactory)
       throws SerDeException {
     super(objectType);
-    objectInspectorProperties.setProperty(HiveConf.ConfVars.CONVERT_ENUM_TO_STRING.toString(),
-        conf.get(HiveConf.ConfVars.CONVERT_ENUM_TO_STRING.toString(),
-            HiveConf.ConfVars.CONVERT_ENUM_TO_STRING.defaultVal));
     try {
       init(inFactory, outFactory);
     } catch (Exception e) {
@@ -75,12 +69,6 @@ public class ThriftByteStreamTypedSerDe extends ByteStreamTypedSerDe {
   @Override
   protected ObjectInspectorFactory.ObjectInspectorOptions getObjectInspectorOptions() {
     return ObjectInspectorFactory.ObjectInspectorOptions.THRIFT;
-  }
-
-  @Override
-  public ObjectInspector getObjectInspector() throws SerDeException {
-    return ObjectInspectorFactory.getReflectionObjectInspector(objectType,
-        getObjectInspectorOptions(), objectInspectorProperties);
   }
 
   @Override
