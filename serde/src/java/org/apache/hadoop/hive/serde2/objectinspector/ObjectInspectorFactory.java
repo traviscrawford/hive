@@ -74,7 +74,6 @@ public final class ObjectInspectorFactory {
   public static ObjectInspector getReflectionObjectInspector(Type t,
       ObjectInspectorOptions options, Properties properties) {
 
-    // TODO(travis): properties is a poor cache key.
     ObjectInspector oi = objectInspectorCache.get(new MultiKey(t, properties));
     if (oi == null) {
       oi = getReflectionObjectInspectorNoCache(t, options, properties);
