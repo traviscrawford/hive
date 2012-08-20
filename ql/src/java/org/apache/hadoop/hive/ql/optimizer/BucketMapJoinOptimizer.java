@@ -38,6 +38,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.ql.ErrorMsg;
 import org.apache.hadoop.hive.ql.exec.FunctionRegistry;
 import org.apache.hadoop.hive.ql.exec.MapJoinOperator;
 import org.apache.hadoop.hive.ql.exec.Operator;
@@ -80,7 +82,8 @@ public class BucketMapJoinOptimizer implements Transform {
   public ParseContext transform(ParseContext pctx) throws SemanticException {
 
     Map<Rule, NodeProcessor> opRules = new LinkedHashMap<Rule, NodeProcessor>();
-    BucketMapjoinOptProcCtx bucketMapJoinOptimizeCtx = new BucketMapjoinOptProcCtx();
+    BucketMapjoinOptProcCtx bucketMapJoinOptimizeCtx =
+      new BucketMapjoinOptProcCtx(pctx.getConf());
 
     // process map joins with no reducers pattern
     opRules.put(new RuleRegExp("R1", "MAPJOIN%"), getBucketMapjoinProc(pctx));
@@ -142,21 +145,19 @@ public class BucketMapJoinOptimizer implements Transform {
       this.pGraphContext = pGraphContext;
     }
 
-    @Override
-    @SuppressWarnings("unchecked")
-    public Object process(Node nd, Stack<Node> stack, NodeProcessorCtx procCtx,
+    private boolean convertBucketMapJoin(Node nd, Stack<Node> stack, NodeProcessorCtx procCtx,
         Object... nodeOutputs) throws SemanticException {
-
       MapJoinOperator mapJoinOp = (MapJoinOperator) nd;
       BucketMapjoinOptProcCtx context = (BucketMapjoinOptProcCtx) procCtx;
+      HiveConf conf = context.getConf();
 
       if(context.getListOfRejectedMapjoins().contains(mapJoinOp)) {
-        return null;
+        return false;
       }
 
       QBJoinTree joinCxt = this.pGraphContext.getMapJoinContext().get(mapJoinOp);
       if(joinCxt == null) {
-        return null;
+        return false;
       }
 
       List<String> joinAliases = new ArrayList<String>();
@@ -200,7 +201,7 @@ public class BucketMapJoinOptimizer implements Transform {
         String alias = joinAliases.get(index);
         TableScanOperator tso = (TableScanOperator) topOps.get(alias);
         if (tso == null) {
-          return null;
+          return false;
         }
         Table tbl = topToTable.get(tso);
         if(tbl.isPartitioned()) {
@@ -230,15 +231,24 @@ public class BucketMapJoinOptimizer implements Transform {
             List<List<String>> files = new ArrayList<List<String>>();
             for (Partition p : partitions) {
               if (!checkBucketColumns(p.getBucketCols(), mjDecs, index)) {
-                return null;
+                return false;
               }
               List<String> fileNames = getOnePartitionBucketFileNames(p.getDataLocation());
+              // The number of files for the table should be same as number of buckets.
+              int bucketCount = p.getBucketCount();
+              if (fileNames.size() != bucketCount) {
+                String msg = "The number of buckets for table " +
+                  tbl.getTableName() + " partition " + p.getName() + " is " +
+                  p.getBucketCount() + ", whereas the number of files is " + fileNames.size();
+                throw new SemanticException(
+                  ErrorMsg.BUCKETED_TABLE_METADATA_INCORRECT.getMsg(msg));
+              }
               if (alias.equals(baseBigAlias)) {
                 bigTblPartsToBucketFileNames.put(p, fileNames);
-                bigTblPartsToBucketNumber.put(p, p.getBucketCount());
+                bigTblPartsToBucketNumber.put(p, bucketCount);
               } else {
                 files.add(fileNames);
-                buckets.add(p.getBucketCount());
+                buckets.add(bucketCount);
               }
             }
             if (!alias.equals(baseBigAlias)) {
@@ -248,10 +258,18 @@ public class BucketMapJoinOptimizer implements Transform {
           }
         } else {
           if (!checkBucketColumns(tbl.getBucketCols(), mjDecs, index)) {
-            return null;
+            return false;
           }
           List<String> fileNames = getOnePartitionBucketFileNames(tbl.getDataLocation());
           Integer num = new Integer(tbl.getNumBuckets());
+          // The number of files for the table should be same as number of buckets.
+          if (fileNames.size() != num) {
+            String msg = "The number of buckets for table " +
+              tbl.getTableName() + " is " + tbl.getNumBuckets() +
+              ", whereas the number of files is " + fileNames.size();
+            throw new SemanticException(
+              ErrorMsg.BUCKETED_TABLE_METADATA_INCORRECT.getMsg(msg));
+          }
           if (alias.equals(baseBigAlias)) {
             bigTblPartsToBucketFileNames.put(null, fileNames);
             bigTblPartsToBucketNumber.put(null, tbl.getNumBuckets());
@@ -268,7 +286,7 @@ public class BucketMapJoinOptimizer implements Transform {
       // the big table can be divided by no of buckets in small tables.
       for (Integer bucketNumber : bigTblPartsToBucketNumber.values()) {
         if (!checkBucketNumberAgainstBigTable(aliasToPartitionBucketNumberMapping, bucketNumber)) {
-          return null;
+          return false;
         }
       }
 
@@ -318,6 +336,26 @@ public class BucketMapJoinOptimizer implements Transform {
       if (bigTablePartitioned) {
         desc.setBigTablePartSpecToFileMapping(convert(bigTblPartsToBucketFileNames));
       }
+
+      return true;
+    }
+
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Object process(Node nd, Stack<Node> stack, NodeProcessorCtx procCtx,
+        Object... nodeOutputs) throws SemanticException {
+
+      boolean convert = convertBucketMapJoin(nd, stack, procCtx, nodeOutputs);
+      BucketMapjoinOptProcCtx context = (BucketMapjoinOptProcCtx) procCtx;
+      HiveConf conf = context.getConf();
+
+      // Throw an error if the user asked for bucketed mapjoin to be enforced and
+      // bucketed mapjoin cannot be performed
+      if (!convert && conf.getBoolVar(HiveConf.ConfVars.HIVEENFORCEBUCKETMAPJOIN)) {
+        throw new SemanticException(ErrorMsg.BUCKET_MAPJOIN_NOT_POSSIBLE.getMsg());
+      }
+
       return null;
     }
 
@@ -433,14 +471,23 @@ public class BucketMapJoinOptimizer implements Transform {
   }
 
   class BucketMapjoinOptProcCtx implements NodeProcessorCtx {
+    private final HiveConf conf;
+
     // we only convert map joins that follows a root table scan in the same
     // mapper. That means there is no reducer between the root table scan and
     // mapjoin.
     Set<MapJoinOperator> listOfRejectedMapjoins = new HashSet<MapJoinOperator>();
 
+    public BucketMapjoinOptProcCtx(HiveConf conf) {
+      this.conf = conf;
+    }
+
+    public HiveConf getConf() {
+      return conf;
+    }
+
     public Set<MapJoinOperator> getListOfRejectedMapjoins() {
       return listOfRejectedMapjoins;
     }
-
   }
 }

@@ -317,6 +317,8 @@ public class HiveConf extends Configuration {
 
     // Default parameters for creating tables
     NEWTABLEDEFAULTPARA("hive.table.parameters.default", ""),
+    // Parameters to copy over when creating a table with Create Table Like.
+    DDL_CTL_PARAMETERS_WHITELIST("hive.ddl.createtablelike.properties.whitelist", ""),
     METASTORE_RAW_STORE_IMPL("hive.metastore.rawstore.impl",
         "org.apache.hadoop.hive.metastore.ObjectStore"),
     METASTORE_CONNECTION_DRIVER("javax.jdo.option.ConnectionDriverName",
@@ -472,6 +474,7 @@ public class HiveConf extends Configuration {
     HIVEENFORCESORTING("hive.enforce.sorting", false),
     HIVEPARTITIONER("hive.mapred.partitioner", "org.apache.hadoop.hive.ql.io.DefaultHivePartitioner"),
     HIVEENFORCESORTMERGEBUCKETMAPJOIN("hive.enforce.sortmergebucketmapjoin", false),
+    HIVEENFORCEBUCKETMAPJOIN("hive.enforce.bucketmapjoin", false),
 
     HIVESCRIPTOPERATORTRUST("hive.exec.script.trust", false),
     HIVEROWOFFSET("hive.exec.rowoffset", false),
@@ -551,6 +554,9 @@ public class HiveConf extends Configuration {
     HIVEOPTGBYUSINGINDEX("hive.optimize.index.groupby", false),
 
     HIVEOUTERJOINSUPPORTSFILTERS("hive.outerjoin.supports.filters", true),
+
+    // 'minimal', 'more' (and 'all' later)
+    HIVEFETCHTASKCONVERSION("hive.fetch.task.conversion", "minimal"),
 
     // Serde for FetchTask
     HIVEFETCHOUTPUTSERDE("hive.fetch.output.serde", "org.apache.hadoop.hive.serde2.DelimitedJSONSerDe"),

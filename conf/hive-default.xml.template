@@ -477,7 +477,24 @@
 <property>
   <name>hive.mapred.mode</name>
   <value>nonstrict</value>
-  <description>The mode in which the hive operations are being performed. In strict mode, some risky queries are not allowed to run</description>
+  <description>The mode in which the hive operations are being performed. 
+     In strict mode, some risky queries are not allowed to run. They include:
+       Cartesian Product.
+       No partition being picked up for a query.
+       Comparing bigints and strings.
+       Comparing bigints and doubles.
+       Orderby without limit.
+  </description>
+</property>
+
+<property>
+  <name>hive.enforce.bucketmapjoin</name>
+  <value>false</value>
+  <description>If the user asked for bucketed map-side join, and it cannot be performed,
+    should the query fail or not ? For eg, if the buckets in the tables being joined are 
+    not a multiple of each other, bucketed map-side join cannot be performed, and the 
+    query will fail if hive.enforce.bucketmapjoin is set to true.
+  </description>
 </property>
 
 <property>
@@ -1087,6 +1104,12 @@
 </property>
 
 <property>
+  <name>hive.ddl.createtablelike.properties.whitelist</name>
+  <value></value>
+  <description>Table Properties to copy over when executing a Create Table Like.</description>
+</property>
+
+<property>
   <name>hive.variable.substitute</name>
   <value>true</value>
   <description>This enables substitution using syntax like ${var} ${system:var} and ${env:var}.</description>
@@ -1386,6 +1409,18 @@
                    are produced by this query and finish earlier will be available for querying
                    much earlier.  Since the locks are only released once the query finishes, this
                    does not apply if concurrency is enabled.
+  </description>
+</property>
+
+<property>
+  <name>hive.fetch.task.conversion</name>
+  <value>minimal</value>
+  <description>
+    Some select queries can be converted to single FETCH task minimizing latency.
+    Currently the query should be single sourced not having any subquery and should not have
+    any aggregations or distincts (which incurrs RS), lateral views and joins.
+    1. minimal : SELECT STAR, FILTER on partition columns, LIMIT only
+    2. more    : SELECT, FILTER, LIMIT only (+TABLESAMPLE, virtual columns)
   </description>
 </property>
 
