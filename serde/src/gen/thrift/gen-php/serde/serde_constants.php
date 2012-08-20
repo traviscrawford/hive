@@ -64,6 +64,8 @@ $GLOBALS['serde_CONSTANTS']['BINARY_TYPE_NAME'] = "binary";
 
 $GLOBALS['serde_CONSTANTS']['LIST_TYPE_NAME'] = "array";
 
+$GLOBALS['serde_CONSTANTS']['SET_TYPE_NAME'] = "set";
+
 $GLOBALS['serde_CONSTANTS']['MAP_TYPE_NAME'] = "map";
 
 $GLOBALS['serde_CONSTANTS']['STRUCT_TYPE_NAME'] = "struct";
@@ -92,6 +94,7 @@ $GLOBALS['serde_CONSTANTS']['PrimitiveTypes'] = array(
 
 $GLOBALS['serde_CONSTANTS']['CollectionTypes'] = array(
   "array" => true,
+  "set" => true,
   "map" => true,
 );
 

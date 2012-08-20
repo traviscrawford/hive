@@ -62,6 +62,8 @@ BINARY_TYPE_NAME = %q"binary"
 
 LIST_TYPE_NAME = %q"array"
 
+SET_TYPE_NAME = %q"set"
+
 MAP_TYPE_NAME = %q"map"
 
 STRUCT_TYPE_NAME = %q"struct"
@@ -90,6 +92,7 @@ PrimitiveTypes = Set.new([
 
 CollectionTypes = Set.new([
   %q"array",
+  %q"set",
   %q"map",
 ])
 

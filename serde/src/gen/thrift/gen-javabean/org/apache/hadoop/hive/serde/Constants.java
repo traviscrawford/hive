@@ -79,6 +79,8 @@ public class Constants {
 
   public static final String LIST_TYPE_NAME = "array";
 
+  public static final String SET_TYPE_NAME = "set";
+
   public static final String MAP_TYPE_NAME = "map";
 
   public static final String STRUCT_TYPE_NAME = "struct";
@@ -109,6 +111,7 @@ public class Constants {
   public static final Set<String> CollectionTypes = new HashSet<String>();
   static {
     CollectionTypes.add("array");
+    CollectionTypes.add("set");
     CollectionTypes.add("map");
   }
 

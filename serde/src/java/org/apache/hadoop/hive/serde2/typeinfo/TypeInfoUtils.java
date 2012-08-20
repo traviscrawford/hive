@@ -24,8 +24,10 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.hadoop.hive.serde.Constants;
 import org.apache.hadoop.hive.serde2.objectinspector.ListObjectInspector;
@@ -34,6 +36,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorUtils;
 import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.SetObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.UnionObjectInspector;
@@ -73,6 +76,12 @@ public final class TypeInfoUtils {
       if (List.class == (Class<?>) pt.getRawType()
           || ArrayList.class == (Class<?>) pt.getRawType()) {
         return TypeInfoFactory.getListTypeInfo(getExtendedTypeInfoFromJavaType(
+            pt.getActualTypeArguments()[0], m));
+      }
+      // Set?
+      if (Set.class == (Class<?>) pt.getRawType()
+          || HashSet.class == (Class<?>) pt.getRawType()) {
+        return TypeInfoFactory.getSetTypeInfo(getExtendedTypeInfoFromJavaType(
             pt.getActualTypeArguments()[0], m));
       }
       // Map?
@@ -292,6 +301,7 @@ public final class TypeInfoUtils {
       Token t = typeInfoTokens.get(iToken);
       if (item.equals("type")) {
         if (!Constants.LIST_TYPE_NAME.equals(t.text)
+            && !Constants.SET_TYPE_NAME.equals(t.text)
             && !Constants.MAP_TYPE_NAME.equals(t.text)
             && !Constants.STRUCT_TYPE_NAME.equals(t.text)
             && !Constants.UNION_TYPE_NAME.equals(t.text)
@@ -337,6 +347,14 @@ public final class TypeInfoUtils {
         TypeInfo listElementType = parseType();
         expect(">");
         return TypeInfoFactory.getListTypeInfo(listElementType);
+      }
+
+      // Is this a set type?
+      if (Constants.SET_TYPE_NAME.equals(t.text)) {
+        expect("<");
+        TypeInfo setElementType = parseType();
+        expect(">");
+        return TypeInfoFactory.getSetTypeInfo(setElementType);
       }
 
       // Is this a map type?
@@ -430,6 +448,14 @@ public final class TypeInfoUtils {
             .getStandardListObjectInspector(elementObjectInspector);
         break;
       }
+      case SET: {
+        ObjectInspector elementObjectInspector =
+            getStandardWritableObjectInspectorFromTypeInfo(((SetTypeInfo) typeInfo)
+            .getSetElementTypeInfo());
+        result = ObjectInspectorFactory
+            .getStandardSetObjectInspector(elementObjectInspector);
+        break;
+      }
       case MAP: {
         MapTypeInfo mapTypeInfo = (MapTypeInfo) typeInfo;
         ObjectInspector keyObjectInspector =
@@ -507,6 +533,14 @@ public final class TypeInfoUtils {
             .getListElementTypeInfo());
         result = ObjectInspectorFactory
             .getStandardListObjectInspector(elementObjectInspector);
+        break;
+      }
+      case SET: {
+        ObjectInspector elementObjectInspector =
+            getStandardJavaObjectInspectorFromTypeInfo(((SetTypeInfo) typeInfo)
+            .getSetElementTypeInfo());
+        result = ObjectInspectorFactory
+            .getStandardSetObjectInspector(elementObjectInspector);
         break;
       }
       case MAP: {
@@ -587,6 +621,13 @@ public final class TypeInfoUtils {
       result = TypeInfoFactory
           .getListTypeInfo(getTypeInfoFromObjectInspector(loi
           .getListElementObjectInspector()));
+      break;
+    }
+    case SET: {
+      SetObjectInspector soi = (SetObjectInspector) oi;
+      result = TypeInfoFactory
+          .getSetTypeInfo(getTypeInfoFromObjectInspector(soi
+          .getSetElementObjectInspector()));
       break;
     }
     case MAP: {

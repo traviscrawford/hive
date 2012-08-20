@@ -66,6 +66,8 @@ serdeConstants::serdeConstants() {
 
   LIST_TYPE_NAME = "array";
 
+  SET_TYPE_NAME = "set";
+
   MAP_TYPE_NAME = "map";
 
   STRUCT_TYPE_NAME = "struct";
@@ -91,6 +93,7 @@ serdeConstants::serdeConstants() {
   PrimitiveTypes.insert("binary");
 
   CollectionTypes.insert("array");
+  CollectionTypes.insert("set");
   CollectionTypes.insert("map");
 
 }

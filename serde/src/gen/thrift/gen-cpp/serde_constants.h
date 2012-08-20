@@ -42,6 +42,7 @@ class serdeConstants {
   std::string TIMESTAMP_TYPE_NAME;
   std::string BINARY_TYPE_NAME;
   std::string LIST_TYPE_NAME;
+  std::string SET_TYPE_NAME;
   std::string MAP_TYPE_NAME;
   std::string STRUCT_TYPE_NAME;
   std::string UNION_TYPE_NAME;

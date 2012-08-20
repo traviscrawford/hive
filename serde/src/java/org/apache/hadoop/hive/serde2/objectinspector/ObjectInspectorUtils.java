@@ -23,9 +23,11 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -139,6 +141,13 @@ public final class ObjectInspectorUtils {
       result = ObjectInspectorFactory
           .getStandardListObjectInspector(getStandardObjectInspector(loi
           .getListElementObjectInspector(), objectInspectorOption));
+      break;
+    }
+    case SET: {
+      SetObjectInspector soi = (SetObjectInspector) oi;
+      result = ObjectInspectorFactory
+          .getStandardSetObjectInspector(getStandardObjectInspector(soi
+          .getSetElementObjectInspector(), objectInspectorOption));
       break;
     }
     case MAP: {
@@ -256,6 +265,17 @@ public final class ObjectInspectorUtils {
             .getListElementObjectInspector(), objectInspectorOption));
       }
       result = list;
+      break;
+    }
+    case SET: {
+      SetObjectInspector soi = (SetObjectInspector) oi;
+      Set<?> inputSet = soi.getSet(o);
+      Set<Object> outputSet = new HashSet<Object>();
+      for (Object inputElement : inputSet) {
+        outputSet.add(copyToStandardObject(inputElement, soi
+            .getSetElementObjectInspector(), objectInspectorOption));
+      }
+      result = outputSet;
       break;
     }
     case MAP: {
@@ -384,6 +404,11 @@ public final class ObjectInspectorUtils {
       return oi.getClass().getSimpleName() + "<"
           + getObjectInspectorName(loi.getListElementObjectInspector()) + ">";
     }
+    case SET: {
+      SetObjectInspector soi = (SetObjectInspector) oi;
+      return oi.getClass().getSimpleName() + "<"
+          + getObjectInspectorName(soi.getSetElementObjectInspector()) + ">";
+    }
     case MAP: {
       MapObjectInspector moi = (MapObjectInspector) oi;
       return oi.getClass().getSimpleName() + "<"
@@ -491,6 +516,15 @@ public final class ObjectInspectorUtils {
       }
       return r;
     }
+    case SET: {
+      int r = 0;
+      SetObjectInspector setOI = (SetObjectInspector)objIns;
+      ObjectInspector elemOI = setOI.getSetElementObjectInspector();
+      for (Object inputElement : setOI.getSet(o)) {
+        r = 31 * r + hashCode(inputElement, elemOI);
+      }
+      return r;
+    }
     case MAP: {
       int r = 0;
       MapObjectInspector mapOI = (MapObjectInspector)objIns;
@@ -536,12 +570,18 @@ public final class ObjectInspectorUtils {
    */
   public static boolean compareSupported(ObjectInspector oi) {
     switch (oi.getCategory()) {
-    case PRIMITIVE:
+    case PRIMITIVE: {
       return true;
-    case LIST:
+    }
+    case LIST: { 
       ListObjectInspector loi = (ListObjectInspector) oi;
       return compareSupported(loi.getListElementObjectInspector());
-    case STRUCT:
+    }
+    case SET: {
+      SetObjectInspector soi = (SetObjectInspector) oi;
+      return compareSupported(soi.getSetElementObjectInspector());
+    }
+    case STRUCT: {
       StructObjectInspector soi = (StructObjectInspector) oi;
       List<? extends StructField> fields = soi.getAllStructFieldRefs();
       for (int f = 0; f < fields.size(); f++) {
@@ -550,9 +590,11 @@ public final class ObjectInspectorUtils {
         }
       }
       return true;
-    case MAP:
+    }
+    case MAP: {
       return false;
-    case UNION:
+    }
+    case UNION: {
       UnionObjectInspector uoi = (UnionObjectInspector) oi;
       for (ObjectInspector eoi : uoi.getObjectInspectors()) {
         if (!compareSupported(eoi)) {
@@ -560,6 +602,7 @@ public final class ObjectInspectorUtils {
         }
       }
       return true;
+    }
     default:
       return false;
     }
@@ -698,6 +741,26 @@ public final class ObjectInspectorUtils {
       }
       return loi1.getListLength(o1) - loi2.getListLength(o2);
     }
+    case SET: {
+      SetObjectInspector soi1 = (SetObjectInspector) oi1;
+      SetObjectInspector soi2 = (SetObjectInspector) oi2;
+      ObjectInspector seoi1 = soi1.getSetElementObjectInspector();
+      ObjectInspector seoi2 = soi2.getSetElementObjectInspector();
+
+      Set<?> set1 = soi1.getSet(o1);
+      Set<?> set2 = soi1.getSet(o2);
+      int minimum = Math.min(soi1.getSetSize(o1), soi2.getSetSize(o2));
+      Iterator<?> it1 = set1.iterator();
+      Iterator<?> it2 = set2.iterator();
+
+      for (int i = 0; i < minimum; i++) {
+        int r = compare(it1.next(), seoi1, it2.next(), seoi2, mapEqualComparer);
+        if (r != 0) {
+          return r;
+        }
+      }
+      return soi1.getSetSize(o1) - soi2.getSetSize(o2);
+    }
     case MAP: {
       if (mapEqualComparer == null) {
         throw new RuntimeException("Compare on map type not supported!");
@@ -814,6 +877,15 @@ public final class ObjectInspectorUtils {
       return compareTypes(child1, child2);
     }
 
+    // If sets, recursively compare the set element types
+    if (c1.equals(Category.SET)) {
+      ObjectInspector child1 =
+        ((SetObjectInspector) o1).getSetElementObjectInspector();
+      ObjectInspector child2 =
+        ((SetObjectInspector) o2).getSetElementObjectInspector();
+      return compareTypes(child1, child2);
+    }
+
     // If maps, recursively compare the key and value types
     if (c1.equals(Category.MAP)) {
       MapObjectInspector mapOI1 = (MapObjectInspector) o1;
@@ -911,6 +983,14 @@ public final class ObjectInspectorUtils {
               ObjectInspectorCopyOption.WRITABLE
             ),
             (List<?>)writableValue);
+      case SET:
+        SetObjectInspector soi = (SetObjectInspector) oi;
+        return ObjectInspectorFactory.getStandardConstantSetObjectInspector(
+            getStandardObjectInspector(
+              soi.getSetElementObjectInspector(),
+              ObjectInspectorCopyOption.WRITABLE
+            ),
+            (Set<?>)writableValue);
       case MAP:
         MapObjectInspector moi = (MapObjectInspector) oi;
         return ObjectInspectorFactory.getStandardConstantMapObjectInspector(
@@ -937,6 +1017,7 @@ public final class ObjectInspectorUtils {
     switch (oi.getCategory()) {
       case PRIMITIVE:
       case LIST:
+      case SET:
       case MAP:
         return true;
       default:

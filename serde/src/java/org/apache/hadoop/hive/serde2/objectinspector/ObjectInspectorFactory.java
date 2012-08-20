@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
@@ -121,6 +122,11 @@ public final class ObjectInspectorFactory {
       // List?
       if (List.class.isAssignableFrom((Class<?>) pt.getRawType())) {
         return getStandardListObjectInspector(getReflectionObjectInspector(pt
+            .getActualTypeArguments()[0], options));
+      }
+      // Set?
+      if (Set.class.isAssignableFrom((Class<?>) pt.getRawType())) {
+        return getStandardSetObjectInspector(getReflectionObjectInspector(pt
             .getActualTypeArguments()[0], options));
       }
       // Map?
@@ -231,6 +237,23 @@ public final class ObjectInspectorFactory {
     return new StandardConstantListObjectInspector(listElementObjectInspector, constantValue);
   }
 
+  static HashMap<ObjectInspector, StandardSetObjectInspector> cachedStandardSetObjectInspector = new HashMap<ObjectInspector, StandardSetObjectInspector>();
+
+  public static StandardSetObjectInspector getStandardSetObjectInspector(
+      ObjectInspector setElementObjectInspector) {
+    StandardSetObjectInspector result = cachedStandardSetObjectInspector
+        .get(setElementObjectInspector);
+    if (result == null) {
+      result = new StandardSetObjectInspector(setElementObjectInspector);
+      cachedStandardSetObjectInspector.put(setElementObjectInspector, result);
+    }
+    return result;
+  }
+
+  public static StandardConstantSetObjectInspector getStandardConstantSetObjectInspector(
+      ObjectInspector setElementObjectInspector, Set<?> constantValue) {
+    return new StandardConstantSetObjectInspector(setElementObjectInspector, constantValue);
+  }
 
   static HashMap<List<ObjectInspector>, StandardMapObjectInspector> cachedStandardMapObjectInspector = new HashMap<List<ObjectInspector>, StandardMapObjectInspector>();
 

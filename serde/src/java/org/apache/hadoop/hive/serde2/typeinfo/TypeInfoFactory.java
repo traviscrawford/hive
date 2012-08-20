@@ -122,6 +122,17 @@ public final class TypeInfoFactory {
     return result;
   }
 
+  static HashMap<TypeInfo, TypeInfo> cachedSetTypeInfo = new HashMap<TypeInfo, TypeInfo>();
+
+  public static TypeInfo getSetTypeInfo(TypeInfo elementTypeInfo) {
+    TypeInfo result = cachedSetTypeInfo.get(elementTypeInfo);
+    if (result == null) {
+      result = new SetTypeInfo(elementTypeInfo);
+      cachedSetTypeInfo.put(elementTypeInfo, result);
+    }
+    return result;
+  }
+
   static HashMap<ArrayList<TypeInfo>, TypeInfo> cachedMapTypeInfo =
     new HashMap<ArrayList<TypeInfo>, TypeInfo>();
 

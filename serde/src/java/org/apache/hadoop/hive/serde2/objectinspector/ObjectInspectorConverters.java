@@ -21,6 +21,7 @@ package org.apache.hadoop.hive.serde2.objectinspector;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.JavaStringObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorConverter;
@@ -129,6 +130,9 @@ public final class ObjectInspectorConverters {
     case LIST:
       return new ListConverter((ListObjectInspector) inputOI,
           (SettableListObjectInspector) outputOI);
+    case SET:
+      return new SetConverter((SetObjectInspector) inputOI,
+          (SettableSetObjectInspector) outputOI);
     case MAP:
       return new MapConverter((MapObjectInspector) inputOI,
           (SettableMapObjectInspector) outputOI);
@@ -190,6 +194,56 @@ public final class ObjectInspectorConverters {
       return output;
     }
 
+  }
+
+  /**
+   * A converter class for Set.
+   */
+  public static class SetConverter implements Converter {
+
+    SetObjectInspector inputOI;
+    SettableSetObjectInspector outputOI;
+
+    ObjectInspector inputElementOI;
+    ObjectInspector outputElementOI;
+
+    ArrayList<Converter> elementConverters;
+
+    Object output;
+
+    public SetConverter(SetObjectInspector inputOI,
+        SettableSetObjectInspector outputOI) {
+      this.inputOI = inputOI;
+      this.outputOI = outputOI;
+      inputElementOI = inputOI.getSetElementObjectInspector();
+      outputElementOI = outputOI.getSetElementObjectInspector();
+      output = outputOI.create();
+      elementConverters = new ArrayList<Converter>();
+    }
+
+    @Override
+    public Object convert(Object input) {
+      if (input == null) {
+        return null;
+      }
+      // Create enough elementConverters
+      // NOTE: we have to have a separate elementConverter for each element,
+      // because the elementConverters can reuse the internal object.
+      // So it's not safe to use the same elementConverter to convert multiple
+      // elements.
+      while (elementConverters.size() < inputOI.getSetSize(input)) {
+        elementConverters.add(getConverter(inputElementOI, outputElementOI));
+      }
+
+      // Convert the elements
+      Set<?> set = inputOI.getSet(input);
+      int index = 0;
+      for (Object inputElement : set) {
+        Object outputElement = elementConverters.get(index++).convert(inputElement);
+        outputOI.add(output, outputElement);
+      }
+      return output;
+    }
   }
 
   /**
