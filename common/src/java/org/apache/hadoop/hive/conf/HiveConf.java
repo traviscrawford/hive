@@ -215,7 +215,7 @@ public class HiveConf extends Configuration {
     // with a single int field named value. However, users often refer to Enum
     // values by their string name. Enabling this option converts enum values
     // to strings at runtime.
-    CONVERT_ENUM_TO_STRING("hive.data.convert.enum.to.string", false),
+    CONVERT_ENUM_TO_STRING("hive.data.convert.enum.to.string", true),
 
     // Hadoop Configuration Properties
     // Properties with null values are ignored and exist only for the purpose of giving us
