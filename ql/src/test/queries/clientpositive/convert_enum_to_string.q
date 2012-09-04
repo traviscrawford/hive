@@ -1,5 +1,5 @@
--- Ensure the default behavior displays Enum fields as struct<value:int>
--- and that enum-to-string conversion can be enabled/disabled.
+-- Ensure the default behavior displays Enum fields as strings
+-- (instead of struct<value:int>) and that conversion can be enabled/disabled.
 
 create table convert_enum_to_string
   partitioned by (b string)
@@ -10,8 +10,8 @@ create table convert_enum_to_string
 
 describe convert_enum_to_string;
 
-set hive.data.convert.enum.to.string=true;
+set hive.data.convert.enum.to.string=false;
 describe convert_enum_to_string;
 
-set hive.data.convert.enum.to.string=false;
+set hive.data.convert.enum.to.string=true;
 describe convert_enum_to_string;

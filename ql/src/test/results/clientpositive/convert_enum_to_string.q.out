@@ -1,5 +1,5 @@
-PREHOOK: query: -- Ensure the default behavior displays Enum fields as struct<value:int>
--- and that enum-to-string conversion can be enabled/disabled.
+PREHOOK: query: -- Ensure the default behavior displays Enum fields as strings
+-- (instead of struct<value:int>) and that conversion can be enabled/disabled.
 
 create table convert_enum_to_string
   partitioned by (b string)
@@ -8,8 +8,8 @@ create table convert_enum_to_string
       "serialization.class"="org.apache.hadoop.hive.serde2.thrift.test.MegaStruct",
       "serialization.format"="org.apache.thrift.protocol.TBinaryProtocol")
 PREHOOK: type: CREATETABLE
-POSTHOOK: query: -- Ensure the default behavior displays Enum fields as struct<value:int>
--- and that enum-to-string conversion can be enabled/disabled.
+POSTHOOK: query: -- Ensure the default behavior displays Enum fields as strings
+-- (instead of struct<value:int>) and that conversion can be enabled/disabled.
 
 create table convert_enum_to_string
   partitioned by (b string)
@@ -19,31 +19,6 @@ create table convert_enum_to_string
       "serialization.format"="org.apache.thrift.protocol.TBinaryProtocol")
 POSTHOOK: type: CREATETABLE
 POSTHOOK: Output: default@convert_enum_to_string
-PREHOOK: query: describe convert_enum_to_string
-PREHOOK: type: DESCTABLE
-POSTHOOK: query: describe convert_enum_to_string
-POSTHOOK: type: DESCTABLE
-my_bool	boolean	from deserializer
-my_byte	tinyint	from deserializer
-my_16bit_int	smallint	from deserializer
-my_32bit_int	int	from deserializer
-my_64bit_int	bigint	from deserializer
-my_double	double	from deserializer
-my_string	string	from deserializer
-my_binary	struct<hb:binary,offset:int,isreadonly:boolean,bigendian:boolean,nativebyteorder:boolean>	from deserializer
-my_string_string_map	map<string,string>	from deserializer
-my_string_enum_map	map<string,struct<value:int>>	from deserializer
-my_enum_string_map	map<struct<value:int>,string>	from deserializer
-my_enum_struct_map	map<struct<value:int>,struct<my_string:string,my_enum:struct<value:int>>>	from deserializer
-my_enum_stringlist_map	map<struct<value:int>,array<string>>	from deserializer
-my_enum_structlist_map	map<struct<value:int>,array<struct<my_string:string,my_enum:struct<value:int>>>>	from deserializer
-my_stringlist	array<string>	from deserializer
-my_structlist	array<struct<my_string:string,my_enum:struct<value:int>>>	from deserializer
-my_enumlist	array<struct<value:int>>	from deserializer
-my_stringset	struct<>	from deserializer
-my_enumset	struct<>	from deserializer
-my_structset	struct<>	from deserializer
-b	string	
 PREHOOK: query: describe convert_enum_to_string
 PREHOOK: type: DESCTABLE
 POSTHOOK: query: describe convert_enum_to_string
@@ -90,6 +65,31 @@ my_enum_structlist_map	map<struct<value:int>,array<struct<my_string:string,my_en
 my_stringlist	array<string>	from deserializer
 my_structlist	array<struct<my_string:string,my_enum:struct<value:int>>>	from deserializer
 my_enumlist	array<struct<value:int>>	from deserializer
+my_stringset	struct<>	from deserializer
+my_enumset	struct<>	from deserializer
+my_structset	struct<>	from deserializer
+b	string	
+PREHOOK: query: describe convert_enum_to_string
+PREHOOK: type: DESCTABLE
+POSTHOOK: query: describe convert_enum_to_string
+POSTHOOK: type: DESCTABLE
+my_bool	boolean	from deserializer
+my_byte	tinyint	from deserializer
+my_16bit_int	smallint	from deserializer
+my_32bit_int	int	from deserializer
+my_64bit_int	bigint	from deserializer
+my_double	double	from deserializer
+my_string	string	from deserializer
+my_binary	struct<hb:binary,offset:int,isreadonly:boolean,bigendian:boolean,nativebyteorder:boolean>	from deserializer
+my_string_string_map	map<string,string>	from deserializer
+my_string_enum_map	map<string,string>	from deserializer
+my_enum_string_map	map<string,string>	from deserializer
+my_enum_struct_map	map<string,struct<my_string:string,my_enum:string>>	from deserializer
+my_enum_stringlist_map	map<string,array<string>>	from deserializer
+my_enum_structlist_map	map<string,array<struct<my_string:string,my_enum:string>>>	from deserializer
+my_stringlist	array<string>	from deserializer
+my_structlist	array<struct<my_string:string,my_enum:string>>	from deserializer
+my_enumlist	array<string>	from deserializer
 my_stringset	struct<>	from deserializer
 my_enumset	struct<>	from deserializer
 my_structset	struct<>	from deserializer
