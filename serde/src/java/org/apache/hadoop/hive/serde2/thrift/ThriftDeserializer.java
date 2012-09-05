@@ -21,12 +21,10 @@ package org.apache.hadoop.hive.serde2.thrift;
 import java.util.Properties;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.serde2.Deserializer;
 import org.apache.hadoop.hive.serde2.SerDeException;
 import org.apache.hadoop.hive.serde2.SerDeStats;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.thrift.protocol.TProtocolFactory;
 
@@ -63,7 +61,7 @@ public class ThriftDeserializer implements Deserializer {
 
       TProtocolFactory tp = TReflectionUtils
           .getProtocolFactoryByName(protoName);
-      tsd = new ThriftByteStreamTypedSerDe(recordClass, tp, tp, job);
+      tsd = new ThriftByteStreamTypedSerDe(recordClass, tp, tp);
 
     } catch (Exception e) {
       throw new SerDeException(e);
