@@ -20,7 +20,7 @@
 
 <project name="hive" default="jar"
          xmlns:ivy="antlib:org.apache.ivy.ant"
-         xmlns:artifact="artifact:org.apache.maven.artifact.ant"
+         xmlns:artifact="urn:maven-artifact-ant"
          xmlns:rat="antlib:org.apache.rat.anttasks" >
 
   <property name="hive.root" location="${basedir}"/>
@@ -1054,8 +1054,7 @@
   <target name="mvn-taskdef" depends="ivy-retrieve-maven-ant-tasks">
     <echo message="Project: ${ant.project.name}"/>
     <typedef resource="org/apache/maven/artifact/ant/antlib.xml"
-             uri="artifact:org.apache.maven.artifact.ant"
-             classpathref="maven-ant-tasks.classpath"/>
+	     uri="urn:maven-artifact-ant" classpathref="maven-ant-tasks.classpath" />
   </target>
   
   <target name="maven-build" depends="package" description="Build Maven artifacts">
