@@ -20,7 +20,7 @@
 
 <project name="hive" default="jar"
          xmlns:ivy="antlib:org.apache.ivy.ant"
-         xmlns:artifact="urn:maven-artifact-ant"
+         xmlns:artifact="artifact:org.apache.maven.artifact.ant"
          xmlns:rat="antlib:org.apache.rat.anttasks" >
 
   <property name="hive.root" location="${basedir}"/>
@@ -1054,7 +1054,8 @@
   <target name="mvn-taskdef" depends="ivy-retrieve-maven-ant-tasks">
     <echo message="Project: ${ant.project.name}"/>
     <typedef resource="org/apache/maven/artifact/ant/antlib.xml"
-	     uri="urn:maven-artifact-ant" classpathref="maven-ant-tasks.classpath" />
+             uri="artifact:org.apache.maven.artifact.ant"
+             classpathref="maven-ant-tasks.classpath"/>
   </target>
   
   <target name="maven-build" depends="package" description="Build Maven artifacts">
@@ -1187,9 +1188,7 @@
         <artifact:deploy
             file="${mvn.jar.dir}/hive-${hive.project}-${version}.jar">
           <pom refid="hive.project.pom" />
-          <remoteRepository
-              id="apache.snapshots.https"
-              url="https://repository.apache.org/content/repositories/snapshots" />
+          <remoteRepository id="${mvn.deploy.id}" url="${mvn.deploy.url}"/>
         </artifact:deploy>
       </else>
     </if>
