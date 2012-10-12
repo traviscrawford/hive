@@ -211,6 +211,7 @@
           description="To download ivy" unless="offline">
     <echo message="Project: ${ant.project.name}"/>
     <get src="${ivy_repo_url}" dest="${ivy.jar}" usetimestamp="true"/>
+    <get src="${jarjar_repo_url}" dest="${jarjar.jar}" usetimestamp="true"/>
   </target>
   
   <!--
@@ -402,6 +403,14 @@
 
   </target>
 
+  <target name="run-jarjar">
+    <taskdef name="run-jarjar-task" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${jarjar.jar}"/>
+    <run-jarjar-task jarfile="${outputJar}">
+      <zipfileset src="${inputJar}"/>
+      <rule pattern="org.apache.thrift.**" result="org.apache.thrift7.@1"/>
+    </run-jarjar-task>
+  </target>
+
   <target name="package"
           depends="jar"
           description="Deploy JAR artifacts">
@@ -540,6 +549,25 @@
     <copy todir="${target.lib.dir}" preservelastmodified="true" flatten="true">
       <fileset file="${build.dir.hive}/builtins/hive-builtins-${version}.jar"/>
     </copy>
+
+    <!-- run jarjar on jars under dist/lib -->
+    <echo message="Run jarjar on all jars in ${target.lib.dir}"/>
+    <for param="jarfile">
+      <path>
+        <fileset dir="${target.lib.dir}">
+          <include name="*.jar"/>
+        </fileset>
+      </path>
+      <sequential>
+         <echo message="Run jarjar on @{jarfile}"/>
+         <antcall target="run-jarjar">
+           <param name="inputJar" value="@{jarfile}"/>
+           <param name="outputJar" value="@{jarfile}jar"/>
+         </antcall>
+         <move file="@{jarfile}jar" toFile="@{jarfile}"/>
+      </sequential>
+    </for>
+
   </target>
 
 
@@ -1056,6 +1084,28 @@
 	     uri="urn:maven-artifact-ant" classpathref="maven-ant-tasks.classpath" />
   </target>
   
+  <target name="copy-jarjars">
+    <echo message="Copy jarjars to ${jarjar-target-dir}"/>
+    <for list="anttasks,cli,common,contrib,hbase-handler,hwi,jdbc,metastore,serde,service,shims,pdk,builtins" param="project">
+      <sequential>
+        <!-- we cannot rely on build-common.xml since some projects do not use the jar ticket -->
+        <antcall target="run-jarjar">
+          <param name="inputJar" value="${build.dir.hive}/@{project}/hive-@{project}-${version}.jar"/>
+          <param name="outputJar" value="${build.dir.hive}/@{project}/hive-@{project}-${version}.jarjar"/>
+        </antcall>
+        <copy file="${build.dir.hive}/@{project}/hive-@{project}-${version}.jarjar"
+              tofile="${jarjar-target-dir}/hive-@{project}-${version}.jar" />
+      </sequential>
+    </for>
+    <!-- the name does not follow the pattern above -->
+    <antcall target="run-jarjar">
+       <param name="inputJar" value="${build.dir.hive}/ql/hive-exec-${version}.jar"/>
+       <param name="outputJar" value="${build.dir.hive}/ql/hive-exec-${version}.jarjar"/>
+    </antcall>
+    <copy file="${build.dir.hive}/ql/hive-exec-${version}.jarjar"
+          tofile="${jarjar-target-dir}/hive-exec-${version}.jar" />
+  </target>
+
   <target name="maven-build" depends="package" description="Build Maven artifacts">
     <echo message="Project: ${ant.project.name}"/>
     <!-- create jars, poms licences directory -->
@@ -1067,34 +1117,9 @@
     <iterate-all target="make-pom" />
 
     <!-- copy the jars  -->
-    <copy file="${build.dir.hive}/anttasks/hive-anttasks-${version}.jar"
-          todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/cli/hive-cli-${version}.jar"
-          todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/common/hive-common-${version}.jar"
-          todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/contrib/hive-contrib-${version}.jar"
-          todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/hbase-handler/hive-hbase-handler-${version}.jar"
-          todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/hwi/hive-hwi-${version}.jar"
-          todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/jdbc/hive-jdbc-${version}.jar"
-          todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/metastore/hive-metastore-${version}.jar"
-          todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/ql/hive-exec-${version}.jar"
-          todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/serde/hive-serde-${version}.jar"
-          todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/service/hive-service-${version}.jar"
-          todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/shims/hive-shims-${version}.jar"
-          todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/pdk/hive-pdk-${version}.jar"
-          todir="${mvn.jar.dir}" />
-    <copy file="${build.dir.hive}/builtins/hive-builtins-${version}.jar"
-          todir="${mvn.jar.dir}" />
+    <antcall target="copy-jarjars">
+      <param name="jarjar-target-dir" value="${mvn.jar.dir}"/>
+    </antcall>
 
     <!-- copy over maven pom files created using the make-pom target and rename to maven convention -->
     <copy file="${build.dir.hive}/anttasks/pom.xml"

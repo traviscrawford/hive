@@ -268,6 +268,13 @@
       </manifest>
       <metainf dir="${hive.root}" includes="LICENSE,NOTICE"/>
     </jar>
+
+    <taskdef name="run-jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${jarjar.jar}"/>
+    <run-jarjar jarfile="${build.dir}/hive-${ant.project.name}-${version}.jarjar">
+      <zipfileset src="${build.dir}/hive-${ant.project.name}-${version}.jar"/>
+      <rule pattern="org.apache.thrift.**" result="org.apache.thrift7.@1"/>
+    </run-jarjar>
+
     <ivy:publish settingsRef="${ant.project.name}.ivy.settings"
                  resolver="local" pubrevision="${version}" overwrite="true"
                  artifactspattern="${build.dir}/${ivy.publish.pattern}"/>
