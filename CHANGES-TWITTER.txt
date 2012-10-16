@@ -4,6 +4,10 @@ Changes patched into Hive trunk:
 SNAPSHOT indicates a patch was posted to the upstream issue but not yet committed.
 When including such patches here make sure to show which specific patch was used.
 
+
+SNAPSHOT HIVE-3560: Hive always prints a warning message when using remote metastore
+https://issues.apache.org/jira/secure/attachment/12549378/HIVE-3560_logging_tweaks.2.patch
+
 SNAPSHOT HIVE-3450: Hive maven-publish ant task should be configurable
 
 SNAPSHOT ANALYTICS-2894: Patch Hive so that it returns camel case field names for thrift
