@@ -194,7 +194,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
 
   private void open() throws MetaException {
     for (URI store : metastoreUris) {
-      LOG.debug("Trying to connect to HiveMetaStore with URI " + store);
+      LOG.info("Trying to connect to HiveMetaStore with URI " + store);
       try {
         openStore(store);
       } catch (MetaException e) {
