@@ -18,11 +18,6 @@
 
 namespace java org.apache.hadoop.hive.serde2.thrift.test
 
-enum MyEnum {
-  ALPACA = 1,
-  LLAMA = 2
-}
-
 struct IntString {
   1: i32  myint;
   2: string myString;
@@ -36,5 +31,4 @@ struct Complex {
   4: list<string> lString;
   5: list<IntString> lintString;
   6: map<string, string> mStringString;
-  7: MyEnum myEnum;
 }

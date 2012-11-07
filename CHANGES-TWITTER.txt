@@ -1,9 +1,6 @@
-Patches were applied in reverse chronological order as listed.
-
 Changes patched into Hive trunk:
 SNAPSHOT indicates a patch was posted to the upstream issue but not yet committed.
 When including such patches here make sure to show which specific patch was used.
-
 
 SNAPSHOT HIVE-3560: Hive always prints a warning message when using remote metastore
 https://issues.apache.org/jira/secure/attachment/12549378/HIVE-3560_logging_tweaks.2.patch
@@ -15,9 +12,6 @@ http://jira.local.twitter.com/secure/attachment/53755/hive.camelcase.patch
 
 SNAPSHOT ANALYTICS-2886: Add binary-to-bytearray fix in Hive
 http://jira.local.twitter.com/secure/attachment/53521/bytearray_fix.patch
-
-SNAPSHOT HIVE-3323 : Enable enum to string conversions
-https://issues.apache.org/jira/secure/attachment/12538807/HIVE-3323_enum_to_string.4.patch
 
 SNAPSHOT HIVE-3325 : serde-reported partition cols should not be persisted in metastore
 https://issues.apache.org/jira/secure/attachment/12538571/HIVE-3325_serde_reported_part_cols.1.patch
