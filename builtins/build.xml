@@ -17,30 +17,33 @@
    limitations under the License.
 -->
 
-<project xmlns:ivy="antlib:org.apache.ivy.ant" name="builtins" default="jar">
+<project xmlns:artifact="artifact:org.apache.maven.artifact.ant"
+         name="builtins"
+         default="jar">
 
   <property name="src.dir"  location="${basedir}/src"/>
   <import file="../build-common.xml"/>
+  <import file="${hive.root}/build-support/ant/artifact.xml"/>
 
   <target name="compile" depends="init, setup, ivy-retrieve">
     <echo message="Project: ${ant.project.name}"/>
     <!-- defer compilation until package phase -->
   </target>
 
-  <target name="jar" depends="init, setup, ivy-retrieve">
-    <echo message="Project: ${ant.project.name}"/>
-    <!-- defer compilation until package phase -->
-  </target>
-
-  <target name="package" depends="init, setup, ivy-retrieve">
+  <target name="jar" depends="init, setup, ivy-retrieve, make-pom">
     <echo message="Project: ${ant.project.name}"/>
     <ant antfile="build-plugin.xml" target="package" inheritAll="false">
       <property name="hive.install.dir" value="${build.dir.hive}/dist"/>
       <property name="hadoop.home" value="${hadoop.root}"/>
     </ant>
-    <ivy:publish settingsRef="${ant.project.name}.ivy.settings"
-                 resolver="local" pubrevision="${version}" overwrite="true"
-                 artifactspattern="${build.dir}/${ivy.publish.pattern}"/>
+    <artifact:install file="${build.dir}/hive-${ant.project.name}-${version}.jar">
+      <artifact:pom file="${build.dir}/pom.xml"/>
+      <artifact:localRepository path="${mvn.local.repo}"/>
+    </artifact:install>
+  </target>
+
+  <target name="package" depends="init, setup, ivy-retrieve">
+    <echo message="Project: ${ant.project.name}"/>
   </target>
 
   <target name="test" unless="testcase" depends="init, setup, ivy-retrieve, ivy-retrieve-test">

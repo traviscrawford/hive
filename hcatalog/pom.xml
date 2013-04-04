@@ -207,6 +207,9 @@
         <enabled>true</enabled>
         <checksumPolicy>warn</checksumPolicy>
       </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
     </repository>
 
     <!-- A transitive dependency defines this repo in its pom, however, the repo
