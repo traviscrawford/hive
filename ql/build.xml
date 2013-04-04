@@ -18,7 +18,10 @@
 -->
 
 
-<project xmlns:ivy="antlib:org.apache.ivy.ant" name="ql" default="jar">
+<project xmlns:ivy="antlib:org.apache.ivy.ant"
+         xmlns:artifact="artifact:org.apache.maven.artifact.ant"
+         name="ql"
+         default="jar">
 
   <property name="ql.lib.dir" value="${basedir}/lib"/>
   <property name="src.dir"  location="${basedir}/src/java"/>
@@ -35,6 +38,8 @@
   <property name="ql.test.results.beelinepositive.dir" location="${ql.test.results.dir}/beelinepositive"/>
 
   <import file="../build-common.xml"/>
+  <import file="${hive.root}/build-support/ant/artifact.xml"/>
+
   <property name="ql.test.clientpositive.exclude" value="${minimr.query.files}"/>
 
   <property name="ql.test.beelinepositive.exclude" value="${test.beelinepositive.exclude}"/>
@@ -201,7 +206,7 @@
 	
   <!-- Override jar target to specify main class and compiler stuff -->
 
-  <target name="jar" depends="compile">
+  <target name="jar" depends="make-pom,compile">
     <echo message="Project: ${ant.project.name}"/>
     <unzip src="${build.ivy.lib.dir}/default/libthrift-${libthrift.version}.jar" dest="${build.dir.hive}/thrift/classes">
       <patternset>
@@ -269,9 +274,10 @@
       </manifest>
       <metainf dir="${hive.root}" includes="LICENSE,NOTICE"/>
     </jar>
-    <ivy:publish settingsRef="${ant.project.name}.ivy.settings"
-                 resolver="local" pubrevision="${version}" overwrite="true"
-                 artifactspattern="${build.dir}/${ivy.publish.pattern}"/>
+    <artifact:install file="${build.dir}/hive-exec-${version}.jar">
+      <artifact:pom file="${build.dir}/pom.xml"/>
+      <artifact:localRepository path="${mvn.local.repo}"/>
+    </artifact:install>
   </target>
 
   <!-- Override deploy since we are deploying hive_exec and not hive_ql -->

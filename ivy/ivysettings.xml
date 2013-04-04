@@ -55,7 +55,7 @@
       <artifact pattern="${sourceforge-repo}/[module]/files/[module]/[branch]/[module]-[revision](-[classifier]).[ext]"/>
     </url>
 
-    <filesystem name="fs" m2compatible="true" alwaysCheckExactRevision="true">
+    <filesystem name="local_maven_cache" m2compatible="true" alwaysCheckExactRevision="true">
        <artifact pattern="${repo.dir}/[organisation]/[module]/[revision]/[module]-[revision](-[classifier]).[ext]"/>
        <ivy pattern="${repo.dir}/[organisation]/[module]/[revision]/[module]-[revision](-[classifier]).pom"/>
     </filesystem>
@@ -64,6 +64,7 @@
            checkmodified="${ivy.checkmodified}" 
            changingPattern="${ivy.changingPattern}">
       <resolver ref="local" />
+      <resolver ref="local_maven_cache"/>
       <resolver ref="apache-snapshot"/>
       <resolver ref="maven2"/>
       <resolver ref="datanucleus-repo"/>
@@ -72,7 +73,7 @@
 
     <chain name="internal" dual="true">
       <resolver ref="local" />
-      <resolver ref="fs"/>
+      <resolver ref="local_maven_cache"/>
       <resolver ref="apache-snapshot"/>
       <resolver ref="maven2"/>
       <resolver ref="datanucleus-repo"/>

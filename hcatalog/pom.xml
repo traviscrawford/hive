@@ -186,6 +186,17 @@
   </modules>
 
   <repositories>
+    <!-- Disable the Apache snapshots repo. The only allowed snapshots are
+         Hive itself, which are installed locally during the build. -->
+    <repository>
+      <id>apache.snapshots</id>
+      <name>Apache Snapshot Repository</name>
+      <url>http://repository.apache.org/snapshots</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+
     <!-- This is necessary for hive-metastore dependencies. -->
     <repository>
       <id>datanucleus</id>
