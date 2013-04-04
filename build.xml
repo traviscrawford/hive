@@ -264,7 +264,7 @@
   </target>
 
   <target name="jar"
-          depends="init"
+          depends="init,ivy-retrieve-maven-ant-tasks"
           description="Build JAR artifacts">
     <echo message="Project: ${ant.project.name}"/>
     <iterate target="jar" iterate="${iterate.hive.modules}"/>

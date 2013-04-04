@@ -19,7 +19,7 @@
 
 
 <project xmlns:ivy="antlib:org.apache.ivy.ant"
-         xmlns:artifact="urn:maven-artifact-ant"
+         xmlns:artifact="artifact:org.apache.maven.artifact.ant"
          name="hivecommon" default="jar">
 
   <property name="hive.root" location="${basedir}/.."/>
@@ -69,6 +69,8 @@
 
   <property name="hadoop.opts.23" value="-D mapreduce.framework.name=local" />
   <property name="hadoop.opts.20" value="" />
+
+  <import file="build-support/ant/artifact.xml"/>
 
   <target name="set-test-classpath">
     <typedef name="distinctelementsclasspath" classname="org.apache.hadoop.hive.ant.DistinctElementsClassPath"
@@ -264,7 +266,7 @@
     </copy>
   </target>
 
-  <target name="jar" depends="compile">
+  <target name="jar" depends="make-pom,compile">
     <echo message="Project: ${ant.project.name}" />
     <jar
       jarfile="${build.dir}/hive-${ant.project.name}-${version}.jar"
@@ -278,9 +280,10 @@
       </manifest>
       <metainf dir="${hive.root}" includes="LICENSE,NOTICE"/>
     </jar>
-    <ivy:publish settingsRef="${ant.project.name}.ivy.settings"
-                 resolver="local" pubrevision="${version}" overwrite="true"
-                 artifactspattern="${build.dir}/${ivy.publish.pattern}"/>
+    <artifact:install file="${build.dir}/hive-${ant.project.name}-${version}.jar">
+      <artifact:pom file="${build.dir}/pom.xml"/>
+      <artifact:localRepository path="${mvn.local.repo}"/>
+    </artifact:install>
   </target>
 
   <!-- target to compile tests -->
@@ -528,9 +531,9 @@
     <available file="${basedir}/ivy.xml" property="ivy.present"/>
   </target>
 
-  <target name="make-pom" if="ivy.present" depends="check-ivy, jar">
+  <target name="make-pom" if="ivy.present" depends="check-ivy,mvn-taskdef,ivy-resolve">
     <echo message="Project: ${ant.project.name}"/>
-    <echo> Writing POM to ${build.dir}/pom.xml</echo>
+    <echo message="Writing POM to ${build.dir}/pom.xml"/>
 
     <ivy:makepom ivyfile="${basedir}/ivy.xml" pomfile="${build.dir}/pom.xml">
       <mapping conf="default" scope="compile" />
