@@ -70,7 +70,7 @@
   <property name="hadoop.opts.23" value="-D mapreduce.framework.name=local" />
   <property name="hadoop.opts.20" value="" />
 
-  <import file="build-support/ant/artifact.xml"/>
+  <import file="build-support/ant/dependencies.xml"/>
 
   <target name="set-test-classpath">
     <typedef name="distinctelementsclasspath" classname="org.apache.hadoop.hive.ant.DistinctElementsClassPath"

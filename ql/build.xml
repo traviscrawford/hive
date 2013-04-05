@@ -38,7 +38,7 @@
   <property name="ql.test.results.beelinepositive.dir" location="${ql.test.results.dir}/beelinepositive"/>
 
   <import file="../build-common.xml"/>
-  <import file="${hive.root}/build-support/ant/artifact.xml"/>
+  <import file="${hive.root}/build-support/ant/dependencies.xml"/>
 
   <property name="ql.test.clientpositive.exclude" value="${minimr.query.files}"/>
 

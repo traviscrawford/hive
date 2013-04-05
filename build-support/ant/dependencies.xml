@@ -19,8 +19,12 @@
   under the License.
 -->
 
-<project xmlns:artifact="artifact:org.apache.maven.artifact.ant"
-         xmlns:ivy="antlib:org.apache.ivy.ant">
+<!--
+  Ant targets related to dependency resolution and publishing.
+  This file should be treated as a utility library for use by
+  other targets.
+-->
+<project xmlns:artifact="artifact:org.apache.maven.artifact.ant">
 
   <target name="mvn-taskdef">
     <echo message="Project: ${ant.project.name}"/>
@@ -29,3 +33,4 @@
              classpath="${hive.root}/build/ivy/lib/maven/maven-ant-tasks-${maven-ant-tasks.version}.jar"/>
   </target>
 </project>
+

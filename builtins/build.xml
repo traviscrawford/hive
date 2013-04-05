@@ -23,7 +23,7 @@
 
   <property name="src.dir"  location="${basedir}/src"/>
   <import file="../build-common.xml"/>
-  <import file="${hive.root}/build-support/ant/artifact.xml"/>
+  <import file="${hive.root}/build-support/ant/dependencies.xml"/>
 
   <target name="compile" depends="init, setup, ivy-retrieve">
     <echo message="Project: ${ant.project.name}"/>
